@@ -52,9 +52,13 @@ import math
 
 num = math.ceil(len(imagelist) / args.workers)
 thread_num = args.workers
+threads = []
 for i in range(thread_num):
     thread_imagelist = imagelist[i*num:min((i+1)*num, len(imagelist))]
     t = threading.Thread(target=scale_image, args=(root, thread_imagelist, i))
     t.start()
+    threads.append(t)
+
+for t in threads:
     t.join()
 
