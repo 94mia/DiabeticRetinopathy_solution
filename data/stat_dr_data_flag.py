@@ -39,7 +39,7 @@ f1 = open(os.path.join(root, 'train_images.txt'), 'w')
 f2 = open(os.path.join(root, 'train_labels.txt'), 'w')
 
 for index in list:
-    f1.write(os.path.basename(index)+'\r')
+    f1.write(os.path.basename(index).split('.')[0]+'\r')
     f2.write(str(dict[index])+'\r')
 
 f1.close()
