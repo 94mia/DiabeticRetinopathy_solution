@@ -134,7 +134,7 @@ class kaggleClsTrain1(torch.utils.data.Dataset):
 class kaggleClsVal1(torch.utils.data.Dataset):
 	def __init__(self, crop_size, scale_size):
 		super(kaggleClsVal1, self).__init__()
-		self.image = ['data/kaggle1/train_images/val/' + line.strip() + '_' + str(scale_size) + '.png' for line in open('data/kaggle/train_images/val/val_images.txt', 'r')]
+		self.image = ['data/kaggle1/train_images/val/' + line.strip() + '_' + str(scale_size) + '.png' for line in open('data/kaggle1/train_images/val/val_images.txt', 'r')]
 		self.label = torch.from_numpy(np.array(np.loadtxt('data/kaggle1/train_images/val/val_labels.txt'), np.int))
 		with open('data/kaggle/info.json', 'r') as fp:
 			info = json.load(fp)
