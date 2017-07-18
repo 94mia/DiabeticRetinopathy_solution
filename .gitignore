@@ -8,6 +8,7 @@
 # IntelliJ project files
 .idea
 *.iml
+pretrained
 out
 gen### Python template
 # Byte-compiled / optimized / DLL files
