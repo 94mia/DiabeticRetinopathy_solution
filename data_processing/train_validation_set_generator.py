@@ -90,12 +90,91 @@ for label in range(5):
         raw_list.append(raw_256)
         raw_list.append(raw_512)
         raw_list.append(raw_1024)
-        if r in raw_list:
+        for r in raw_list:
             if os.path.exists(r):
                 shutil.copy(r, val_dir)
         f3.write(te_img+'\r')
         f4.write(str(label)+'\r')
 
+f1.close()
+f2.close()
+f3.close()
+f4.close()
 
+f1 = open(train_img_txt, 'r')
+f2 = open(train_label_txt, 'r')
 
+img_list = [f.strip() for f in f1]
+label_list = [l.strip() for l in f2]
 
+assert len(img_list) == len(label_list)
+
+dict = {}
+for index in range(len(img_list)):
+    dict[img_list[index]] = label_list[index]
+
+import random
+random.shuffle(img_list)
+
+img_list_shuf = img_list
+label_list_shuf = [dict[i] for i in img_list_shuf]
+
+print(label_list_shuf)
+
+f1.close()
+f2.close()
+
+f1 = open(train_img_txt, 'w')
+f2 = open(train_label_txt, 'w')
+
+for i in img_list_shuf:
+    f1.write(i+'\r')
+
+for i in label_list_shuf:
+    f2.write(i+'\r')
+
+f1.close()
+f2.close()
+
+# f1 = open(train_img_txt, 'r')
+# f2 = open(train_label_txt, 'r')
+#
+# img_list = [f.strip() for f in f1]
+# label_list = [l.strip() for l in f2]
+#
+# print(len(label_list))
+
+f1 = open(val_img_txt, 'r')
+f2 = open(val_label_txt, 'r')
+
+img_list = [f.strip() for f in f1]
+label_list = [l.strip() for l in f2]
+
+assert len(img_list) == len(label_list)
+
+dict = {}
+for index in range(len(img_list)):
+    dict[img_list[index]] = label_list[index]
+
+import random
+random.shuffle(img_list)
+
+img_list_shuf = img_list
+label_list_shuf = [dict[i] for i in img_list_shuf]
+
+print(label_list_shuf)
+
+f1.close()
+f2.close()
+
+f1 = open(train_img_txt, 'w')
+f2 = open(train_label_txt, 'w')
+
+for i in img_list_shuf:
+    f1.write(i+'\r')
+
+for i in label_list_shuf:
+    f2.write(i+'\r')
+
+f1.close()
+f2.close()
