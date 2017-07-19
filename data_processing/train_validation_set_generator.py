@@ -119,7 +119,8 @@ random.shuffle(img_list)
 img_list_shuf = img_list
 label_list_shuf = [dict[i] for i in img_list_shuf]
 
-print(label_list_shuf)
+print(len(img_list_shuf))
+print(len(label_list_shuf))
 
 f1.close()
 f2.close()
@@ -162,7 +163,8 @@ random.shuffle(img_list)
 img_list_shuf = img_list
 label_list_shuf = [dict[i] for i in img_list_shuf]
 
-print(label_list_shuf)
+print(len(img_list_shuf))
+print(len(label_list_shuf))
 
 f1.close()
 f2.close()
