@@ -241,6 +241,7 @@ def main():
 			if kappa > kappa_best:
 				kappa_best = kappa
 				torch.save(model.cpu().state_dict(), os.path.join(output_dir, opt.dataset + '_cls_' + opt.model + '_%03d' % epoch + '_best.pth'))
+			print('current best kappa: '.format(kappa_best))
 			# torch.save(model.cpu().state_dict(), os.path.join(output_dir, opt.dataset + '_cls_' + opt.model + '_%03d' % epoch + '.pth'))
 			print('===> ' + output_dir + '/' + opt.dataset + '_cls_' + opt.model + '_%03d' % epoch + '.pth')
 			if not os.path.isfile(os.path.join(output_dir, 'train.log')):
