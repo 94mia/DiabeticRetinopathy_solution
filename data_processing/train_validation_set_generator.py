@@ -169,8 +169,8 @@ print(len(label_list_shuf))
 f1.close()
 f2.close()
 
-f1 = open(train_img_txt, 'w')
-f2 = open(train_label_txt, 'w')
+f1 = open(val_img_txt, 'w')
+f2 = open(val_label_txt, 'w')
 
 for i in img_list_shuf:
     f1.write(i+'\r')
