@@ -5,6 +5,7 @@ parser = argparse.ArgumentParser(description='generate train & validation set')
 parser.add_argument('--root', required=True)
 parser.add_argument('--traintxt', required=True)
 parser.add_argument('--trainltxt', required=True)
+parser.add_argument('--testratio', dtype=float, default=0.1)
 
 args = parser.parse_args()
 
@@ -31,7 +32,7 @@ tr_list = []
 te_list = []
 
 for i in range(5):
-    tr, te = train_test_split(cat_files[i], test_size=0.1)
+    tr, te = train_test_split(cat_files[i], test_size=args.testratio)
     tr_list.append(tr)
     te_list.append(te)
 
