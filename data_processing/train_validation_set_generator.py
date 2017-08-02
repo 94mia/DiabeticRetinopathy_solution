@@ -5,7 +5,7 @@ parser = argparse.ArgumentParser(description='generate train & validation set')
 parser.add_argument('--root', required=True)
 parser.add_argument('--traintxt', required=True)
 parser.add_argument('--trainltxt', required=True)
-parser.add_argument('--testratio', dtype=float, default=0.1)
+parser.add_argument('--testratio', type=float, default=0.1)
 
 args = parser.parse_args()
 
