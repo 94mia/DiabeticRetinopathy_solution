@@ -253,7 +253,7 @@ def main():
 	elif opt.phase == 'val':
 		if opt.weight:
 			print('===> Evaluating model')
-			val_data_loader = DataLoader(dataset=globals()[opt.dataset + 'ClsVal'](crop_size=opt.crop, scale_size=opt.size),
+			val_data_loader = DataLoader(dataset=globals()[opt.dataset + 'ClsTest_ZZ'](crop_size=opt.crop, scale_size=opt.size),
 			                             num_workers=opt.threads, batch_size=opt.batch, shuffle=False, pin_memory=False)
 			ten_crop_data_loader = []
 			if opt.tencrop:
