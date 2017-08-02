@@ -12,7 +12,7 @@ args = parser.parse_args()
 
 root = args.root
 
-train_path = os.path.join(root, 'train')
+train_path = os.path.join(root, 'train_images')
 all_path = os.path.join(root, 'all')
 
 src_list = glob(os.path.join(train_path, '*.png'))
