@@ -13,5 +13,6 @@ root = args.root
 images_list = glob(os.path.join(root, '*.jpg'))
 
 for index in images_list:
-    os.rename(index, os.path.join(root, os.path.basename(index).split('(')[1].split(')')[0]+'.jpg'))
+    #os.rename(index, os.path.join(root, 'dr0_' + os.path.basename(index).split('(')[1].split(')')[0]+'.jpg'))
+    os.rename(index, os.path.join(root, 'dr0_' + os.path.basename(index)))
 
