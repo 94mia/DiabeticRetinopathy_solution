@@ -41,6 +41,9 @@ z_labels_list = [l.strip() for l in open(z_labels_txt, 'r')]
 
 assert len(z_images_list) == len(z_labels_list)
 
+print('kaggle list count is: {}'.format(len(k_images_list)))
+print('zz list count is: {}'.format(len(z_images_list)))
+
 a_images_list = k_images_list
 a_images_list[len(k_images_list):len(k_images_list)] = z_images_list
 
@@ -48,8 +51,7 @@ a_labels_list = k_labels_list
 a_labels_list[len(k_labels_list):len(k_labels_list)] = z_labels_list
 
 print('merge list count is: {}'.format(len(a_images_list)))
-print('kaggle list count is: {}'.format(len(k_images_list)))
-print('zz list count is: {}'.format(len(z_images_list)))
+
 
 assert len(a_images_list) == len(k_images_list) + len(z_images_list)
 assert len(a_labels_list) == len(k_labels_list) + len(z_labels_list)
