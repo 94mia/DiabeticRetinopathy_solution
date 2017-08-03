@@ -48,9 +48,9 @@ print('all list count: {}'.format(len(all_images_list)))
 
 with open(all_images_txt, 'w') as f:
     for index in all_images_list:
-        f.write(all_images_list[index])
+        f.write(index)
 
 with open(all_labels_txt, 'w') as f:
     for index in all_labels_list:
-        f.write((all_labels_list[index]))
+        f.write((index))
 
