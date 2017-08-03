@@ -53,8 +53,8 @@ a_labels_list[len(k_labels_list):len(k_labels_list)] = z_labels_list
 print('merge list count is: {}'.format(len(a_images_list)))
 
 
-assert len(a_images_list) == len(k_images_list) + len(z_images_list)
-assert len(a_labels_list) == len(k_labels_list) + len(z_labels_list)
+# assert len(a_images_list) == len(k_images_list) + len(z_images_list)
+# assert len(a_labels_list) == len(k_labels_list) + len(z_labels_list)
 assert len(a_images_list) == len(a_labels_list)
 
 
