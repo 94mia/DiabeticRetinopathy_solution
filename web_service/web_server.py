@@ -13,7 +13,7 @@ import io
 
 PORT = 8002
 
-from web_service.image_preprocessing import DrImageClassifier, get_kaggle_classifier, get_zz_classifier, get_all_classifier
+from image_preprocessing import DrImageClassifier, get_kaggle_classifier, get_zz_classifier, get_all_classifier
 
 # from utils import mdb
 import imagehash
