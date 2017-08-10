@@ -119,7 +119,7 @@ class DrImageClassifier(object):
 
     def image_preprocessed(self, image):
         cropped_image = self.init_crop(image)
-        batch_imgs = torch.stack([self.trans(cropped_image)])
+        batch_imgs = torch.stack([self.transform(cropped_image)])
         return batch_imgs
 
     def classifyImage(self, image):
