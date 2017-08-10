@@ -124,6 +124,7 @@ class DrImageClassifier(object):
 
     def load_model(self, arch, weights, devs=[0]):
         model = cls_model(arch, self.crop_size, 5, weights, True, False)
+        print('device id is: '.format(devs))
         return torch.nn.DataParallel(model, devs).cuda()
 
     def image_preprocessed(self, image):
