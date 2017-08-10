@@ -127,6 +127,9 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         cursor.execute('commit')
         print('end inside _doctor_confirm')
         self.send_response(HTTPStatus.OK)
+        self.send_header("Content-type", 'text/plain')
+        self.send_header("image_uid", str(image_uid))
+        self.end_headers()
 
 
 Handler = ImageHTTPRequestHandler

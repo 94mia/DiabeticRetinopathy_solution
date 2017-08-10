@@ -23,14 +23,14 @@ image_uid = r.headers['image_uid']
 
 print(image_uid)
 
-# headers = {"Content-type": "text/plain", "level":"3", "image_uid":image_uid}
-#
-# # conn.request('GET', "", "", headers=headers)
+headers = {"Content-type": "text/plain", "level":"3", "image_uid":image_uid}
+
+conn.request('GET', "", "", headers=headers)
 # conn.request('GET', "/test/for/medical", "", headers=headers)
-#
-#
-# # 这句似乎是必要的，'''r = conn.getresponse()'''，没有这句，服务器上不执行这一段
-# r = conn.getresponse()
+
+
+# 这句似乎是必要的，'''r = conn.getresponse()'''，没有这句，服务器上不执行这一段
+r = conn.getresponse()
 
 print('end')
 
