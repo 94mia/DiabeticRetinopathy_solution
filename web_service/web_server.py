@@ -16,12 +16,19 @@ PORT = 8002
 from image_preprocessing import DrImageClassifier, get_kaggle_classifier, get_zz_classifier, get_all_classifier
 
 # from utils import mdb
+
+import mdb
 import imagehash
 import os
 
 kaggle_classifier = get_kaggle_classifier()
 zz_classifier = get_zz_classifier()
 all_classifier = get_all_classifier()
+
+db, cursor = mdb.start_db_conn()
+cursor.execute('select * from dr_image_tb')
+print(cursor.fetchall())
+
 
 image_root = './zhizhen'
 
@@ -77,6 +84,27 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         idx,prop= classifier.classifyImage(img)
         print(prop)
 
+        try:
+            cmd_query = """select * from dr_image_tb where id='{0}'""".format(image_id)
+            cursor.execute(cmd_query)
+            query = cursor.fetchall()
+            assert len(query) <= 1
+            if len(query) == 0:
+                imagepath = os.path.join(image_root, '{}.jpeg'.format(image_id))
+                img.save(imagepath)
+                cmd_insert = """insert into dr_image_tb (id, imagepath, algolevel) values ('{0}', '{1}', {2})""".format(
+                    image_id, imagepath, idx
+                )
+            else:
+                cmd_insert = """update dr_image_tb set algolevel={0} where id='{1}'""".format(
+                    idx, image_id
+                )
+            cursor.execute(cmd_insert)
+            cursor.execute('commit')
+        except:
+            print('database operation error!!!!')
+
+
         print('dr image is level: {}'.format(idx))
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-type", 'text/plain')
@@ -84,6 +112,17 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_header("prop", str(prop))
         self.send_header("image_uid", str(image_id))
         self.end_headers()
+
+    def _doctor_confirm(self):
+        doctor_confirm_level = int(self.headers['level'])
+        image_uid = self.headers['image_uid']
+        cmd_inserttb = """update dr_image_tb set doctorlevel={0} where id='{1}'""".format(doctor_confirm_level, image_uid)
+        cursor.execute(cmd_inserttb)
+        cursor.execute('select * from dr_image_tb')
+        print(cursor.fetchall())
+        cursor.execute('commit')
+        print('end inside _doctor_confirm')
+        self.send_response(HTTPStatus.OK)
 
 
 Handler = ImageHTTPRequestHandler
