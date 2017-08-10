@@ -1,1 +1,1 @@
-from .image_preprocessing import *
+from web_service.image_preprocessing import DrImageClassifier
