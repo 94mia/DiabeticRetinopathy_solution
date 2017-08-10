@@ -64,7 +64,17 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         stream = BytesIO(data1)
         img = Image.open(stream)
         image_id = imagehash.average_hash(img)
-        idx,prop= kaggle_classifier.classifyImage(img)
+
+        algo = self.headers['algo']
+        classifier = kaggle_classifier
+        if algo == 'kaggle':
+            classifier = kaggle_classifier
+        elif algo == 'zz':
+            classifier = zz_classifier
+        elif algo == 'all':
+            classifier = all_classifier
+
+        idx,prop= classifier.classifyImage(img)
         print(prop)
 
         print('dr image is level: {}'.format(idx))
