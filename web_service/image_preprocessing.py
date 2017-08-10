@@ -17,6 +17,16 @@ import numpy as np
 import math
 
 import argparse
+
+
+__all__ = [
+    'DrImageClassifier',
+    'get_kaggle_classifier',
+    'get_zz_classifier',
+    'get_all_classifier',
+]
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-dev','--devlist', nargs='+', help='<Required> Set flag',
                     type=int, default=[0,1,2,3], required=False)
@@ -155,7 +165,17 @@ class DrImageClassifier(object):
         return res[0][0], res_prop
 
 
+def get_kaggle_classifier():
+    classifier = DrImageClassifier('rsn34', 'kaggle.pth', args.devlist)
+    return classifier
 
+def get_zz_classifier():
+    classifier = DrImageClassifier('rsn34', 'zz.pth', args.devlist)
+    return classifier
+
+def get_all_classifier():
+    classifier = DrImageClassifier('rsn34', 'all.pth', args.devlist)
+    return classifier
 
 
 def main():
