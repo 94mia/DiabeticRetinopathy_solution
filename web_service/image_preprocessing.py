@@ -14,6 +14,8 @@ import drn
 
 import numpy as np
 
+import math
+
 def initialize_cls_weights(cls):
 	for m in cls.modules():
 		if isinstance(m, nn.Conv2d):
@@ -99,7 +101,7 @@ class DrImageClassifier(object):
         self.rescale_size = 512
         self.crop_size = 512
         self.model_loaded = False
-        with open('data/kaggle/info.json', 'r') as fp:
+        with open('../data/kaggle/info.json', 'r') as fp:
             info = json.load(fp)
             print(info)
         mean_values = torch.from_numpy(np.array(info['mean'], dtype=np.float32) / 255)
@@ -122,7 +124,7 @@ class DrImageClassifier(object):
 
     def classifyImage(self, image):
         if not self.model_loaded:
-            self.model = self.load_model(self.arcn, self.weights, self.devs)
+            self.model = self.load_model(self.arch, self.weights, self.devs)
             self.model.eval()
             self.model_loaded = True
         input = self.image_preprocessed(image)
