@@ -16,6 +16,15 @@ import numpy as np
 
 import math
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('-dev','--devlist', nargs='+', help='<Required> Set flag',
+                    type=int, default=[0,1,2,3], required=False)
+args = parser.parse_args()
+devs = args.devlist
+torch.cuda.set_device(devs[0])
+
+
 def initialize_cls_weights(cls):
 	for m in cls.modules():
 		if isinstance(m, nn.Conv2d):
@@ -115,7 +124,7 @@ class DrImageClassifier(object):
 
     def load_model(self, arch, weights, devs=[0]):
         model = cls_model(arch, self.crop_size, 5, weights, True, False)
-        return torch.nn.DataParallel(model).cuda()
+        return torch.nn.DataParallel(model, devs).cuda()
 
     def image_preprocessed(self, image):
         cropped_image = self.init_crop(image)
@@ -153,7 +162,7 @@ def main():
     # cropped_image = get_input_image(image)
     # cropped_image.show()
 
-    classifier = DrImageClassifier('rsn34', 'kaggle.pth', [2])
+    classifier = DrImageClassifier('rsn34', 'kaggle.pth', args.devlist)
 
     imagepath = 'test.jpeg'
     image = Image.open(imagepath)
