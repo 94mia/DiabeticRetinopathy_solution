@@ -111,37 +111,35 @@ class DrImageClassifier(object):
             transforms.Normalize(mean=mean_values, std=std_values),
         ])
 
-        def load_model(self, arch, weights, devs=[0]):
-            model = cls_model(arch, self.crop_size, 5, weights, True, False)
-            return torch.nn.DataParallel(model).cuda()
+    def load_model(self, arch, weights, devs=[0]):
+        model = cls_model(arch, self.crop_size, 5, weights, True, False)
+        return torch.nn.DataParallel(model).cuda()
 
-        def image_preprocessed(self, image):
-            cropped_image = self.init_crop(image)
-            batch_imgs = torch.stack([self.trans(cropped_image)])
-            return batch_imgs
+    def image_preprocessed(self, image):
+        cropped_image = self.init_crop(image)
+        batch_imgs = torch.stack([self.trans(cropped_image)])
+        return batch_imgs
 
-        def classifyImage(self, image):
-            if not self.model_loaded:
-                self.model = self.load_model(self.arcn, self.weights, self.devs)
-                self.model.eval()
-                self.model_loaded = True
-            input = self.image_preprocessed(image)
-            input_var = torch.autograd.Variable(input.cuda(), volatile=True)
-            output = self.model(input_var)
-            pred = output.data.max(1)[1]
-            m = torch.nn.Softmax()
-            # prop = m(output).data.max(1)[0]
-            prop = m(output).data
-
-            res = 0
-            if self.use_cuda:
-                res = pred.cpu().numpy()
-                res_prop = prop.cpu().numpy()
-            else:
-                res = pred.numpy()
-                res_prop = prop.numpy()
-
-            return res[0][0], res_prop
+    def classifyImage(self, image):
+        if not self.model_loaded:
+            self.model = self.load_model(self.arcn, self.weights, self.devs)
+            self.model.eval()
+            self.model_loaded = True
+        input = self.image_preprocessed(image)
+        input_var = torch.autograd.Variable(input.cuda(), volatile=True)
+        output = self.model(input_var)
+        pred = output.data.max(1)[1]
+        m = torch.nn.Softmax()
+        # prop = m(output).data.max(1)[0]
+        prop = m(output).data
+        res = 0
+        if self.use_cuda:
+            res = pred.cpu().numpy()
+            res_prop = prop.cpu().numpy()
+        else:
+            res = pred.numpy()
+            res_prop = prop.numpy()
+        return res[0][0], res_prop
 
 
 
