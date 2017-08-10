@@ -135,7 +135,8 @@ class DrImageClassifier(object):
         # prop = m(output).data.max(1)[0]
         prop = m(output).data
         res = 0
-        if self.use_cuda:
+        use_cuda = True
+        if use_cuda:
             res = pred.cpu().numpy()
             res_prop = prop.cpu().numpy()
         else:
