@@ -53,6 +53,14 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
             print('begin outside _doctor_confirm')
             self._doctor_confirm()
 
+    def do_POST(self):
+        print('Content type: {0}'.format(self.headers['Content-type']))
+        if self.headers['Content-type'] == 'image/jpeg':
+            self._classify()
+        elif self.headers['Content-type'] == 'text/plain':
+            print('begin outside _doctor_confirm')
+            self._doctor_confirm()
+
 
     # def do_POST(self):
     #     data1 = self.rfile.read(int(self.headers['Content-Length']))
