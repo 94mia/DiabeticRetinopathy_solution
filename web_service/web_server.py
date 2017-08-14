@@ -65,8 +65,8 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_response(200, "ok")
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header("Access-Control-Allow-Headers", "X-Requested-With")
-        self.end_header()
+        self.send_header("Access-Control-Allow-Headers", "X-Requested-With, Content-type, Accept, Content-Length")
+        self.end_headers()
 
             # def do_POST(self):
     #     data1 = self.rfile.read(int(self.headers['Content-Length']))
