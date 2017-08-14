@@ -13,7 +13,7 @@ headers = {"Content-type": "image/jpeg", "Accept": "q=0.6, image/jpeg", "Content
 # conn.request('POST', "/test/for/medical", data, headers)
 # conn.request('GET', "/test/for/medical", data, headers)
 # conn.request('POST', "", data, headers)
-conn.request('GET', "", data, headers)
+conn.request('POST', "", data, headers)
 
 r = conn.getresponse()
 

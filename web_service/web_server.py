@@ -129,10 +129,13 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         doctor_confirm_level = int(self.headers['level'])
         image_uid = self.headers['image_uid']
         cmd_inserttb = """update dr_image_tb set doctorlevel={0} where id='{1}'""".format(doctor_confirm_level, image_uid)
-        cursor.execute(cmd_inserttb)
-        cursor.execute('select * from dr_image_tb')
-        print(cursor.fetchall())
-        cursor.execute('commit')
+        try:
+            cursor.execute(cmd_inserttb)
+            cursor.execute('select * from dr_image_tb')
+            print(cursor.fetchall())
+            cursor.execute('commit')
+        except:
+            print('except when doctor confirm!')
         print('end inside _doctor_confirm')
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-type", 'text/plain')
