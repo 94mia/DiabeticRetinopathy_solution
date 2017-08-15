@@ -7,8 +7,8 @@ conn = http.client.HTTPConnection("face.baidu.com")
 
 data = open('/Users/zhangweidong03/Code/dl/pytorch/github/dl_solution/dl_solution/1.jpg', 'rb').read()
 
-# headers = {"Content-type": "image/jpeg", "Accept": "q=0.6, image/jpeg", "Content-Length": str(len(data)), "algo":"all"}
-headers = {"Content-type": "image/jpeg", "Accept": "q=0.6, image/jpeg", "Content-Length": str(len(data))}
+headers = {"Content-type": "image/jpeg", "Accept": "q=0.6, image/jpeg", "Content-Length": str(len(data)), "algo":"zz"}
+# headers = {"Content-type": "image/jpeg", "Accept": "q=0.6, image/jpeg", "Content-Length": str(len(data))}
 
 conn.request('POST', "/test/for/medical", data, headers)
 # conn.request('GET', "/test/for/medical", data, headers)
