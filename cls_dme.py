@@ -149,6 +149,7 @@ def cls_val(eval_data_loader, model, criterion, ten_crop_data_loader):
 	batch_time = AverageMeter()
 	data_time = AverageMeter()
 	end = time.time()
+	logger = []
 	for num_iter, (image, label) in enumerate(eval_data_loader):
 		data_time.update(time.time() - end)
 		final = model(Variable(image, requires_grad=False, volatile=True))
@@ -170,8 +171,12 @@ def cls_val(eval_data_loader, model, criterion, ten_crop_data_loader):
 		print('Eval: [{0}/{1}]\t' 'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
 		      'Data {data_time.avg:.3f}\t' 'Loss {loss.avg:.4f}\t'  'Kappa {kappa:.4f}\t'
 		      .format(num_iter, len(eval_data_loader), batch_time=batch_time, data_time=data_time, loss=losses, kappa=kappa))
+		logger.append('Eval: [{0}/{1}]\t' 'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+			  'Data {data_time.avg:.3f}\t' 'Loss {loss.avg:.4f}\t'  'Kappa {kappa:.4f}\t'
+			  .format(num_iter, len(eval_data_loader), batch_time=batch_time, data_time=data_time, loss=losses,
+					  kappa=kappa))
 
-	return kappa, tot_pred, tot_label
+	return kappa, tot_pred, tot_label, logger
 
 
 class Cls2Reg(nn.Module):
@@ -236,7 +241,7 @@ def main():
 			optimizer = optim.SGD([{'params': model.base.parameters()}, {'params': model.cls.parameters()}], lr=lr, momentum=opt.mom, weight_decay=opt.wd, nesterov=True)
 			logger = cls_train(train_data_loader, torch.nn.DataParallel(model).cuda(), criterion, optimizer, epoch, opt.display)
 			ten_crop_data_loader = []
-			kappa, pred, label = cls_val(val_data_loader1, torch.nn.DataParallel(model).cuda(), criterion,
+			kappa, pred, label,  logger_val= cls_val(val_data_loader1, torch.nn.DataParallel(model).cuda(), criterion,
 										 ten_crop_data_loader)
 			if kappa > kappa_best:
 				kappa_best = kappa
@@ -249,6 +254,7 @@ def main():
 					fp.write(str(opt) + '\n\n')
 			with open(os.path.join(output_dir, 'train.log'), 'a') as fp:
 				fp.write('\n' + '\n'.join(logger))
+				fp.write('\n' + '\n'.join(logger_val))
 
 	elif opt.phase == 'val':
 		if opt.weight:
@@ -260,7 +266,7 @@ def main():
 				for crop_idx in range(10):
 					ten_crop_data_loader.append(iter(DataLoader(dataset=globals()[opt.dataset + 'ClsValTenCrop'](crop_idx, opt.crop, opt.size),
 					                                            num_workers=opt.threads, batch_size=opt.batch, shuffle=False, pin_memory=False)))
-			kappa, pred, label = cls_val(val_data_loader, torch.nn.DataParallel(model).cuda(), criterion, ten_crop_data_loader)
+			kappa, pred, label, _ = cls_val(val_data_loader, torch.nn.DataParallel(model).cuda(), criterion, ten_crop_data_loader)
 			print('===> Kappa: %.4f' % kappa)
 			print('===> Confusion Matrix:')
 			print(confusion_matrix(label, pred))
