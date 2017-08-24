@@ -2,6 +2,11 @@
 ### Example user template template
 ### Example user template
 
+paper_data/output
+paper_data/test.jpeg
+data/tmp
+data/kaggle/flags
+
 *.png
 *.jpg
 
