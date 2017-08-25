@@ -10,8 +10,8 @@
 - [ ] single task for dr/dme classification
     
 - [ ] multi-task for dr/dme classification
-    - [ ] resnet/resnext/dense net for classification
-    - [ ] code
+    - [x] resnet/resnext/dense net for classification
+    - [x] code
     - [ ] generate kaggle data flag
     - [ ] generate zhizhen(including dr&dme) data flag
     - [ ] training on zhizhen(including dr&dme) dataset

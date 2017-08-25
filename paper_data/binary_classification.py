@@ -313,8 +313,8 @@ def main():
             if acc > accuracy_best:
                 print('\ncurrent best accuracy is: {}\n'.format(acc))
                 accuracy_best = acc
-                torch.save(model.cpu().state_dict(), os.path.join(output_dir, opt.dataset+'_binarycls_'+opt.model+'_%3d'%epoch+'_best.pth'))
-                print('====> Save model: {}'.format(os.path.join(output_dir, opt.dataset+'_binarycls_'+opt.model+'_%3d'%epoch+'_best.pth')))
+                torch.save(model.cpu().state_dict(), os.path.join(output_dir, opt.dataset+'_binarycls_'+opt.model+'_%03d'%epoch+'_best.pth'))
+                print('====> Save model: {}'.format(os.path.join(output_dir, opt.dataset+'_binarycls_'+opt.model+'_%03d'%epoch+'_best.pth')))
             if not os.path.isfile(os.path.join(output_dir, 'train.log')):
                 with open(os.path.join(output_dir, 'train.log'), 'w') as fp:
                     fp.write(str(opt)+'\n\n')

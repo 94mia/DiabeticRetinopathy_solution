@@ -1,7 +1,8 @@
 from PIL import Image
 import os
 
-scale_sizes = [1024, 512, 256, 128]
+# scale_sizes = [1024, 512, 256, 128]
+scale_sizes = [512]
 
 def scale_image(root, imglist, threadid):
     print('===>begin: ', str(threadid))
