@@ -118,6 +118,7 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         sub_idx = self.headers['sub_index']
         folder_index = self.headers['folder_index']
         images_path = os.path.join(self.root, 'train/'+str(folder_index))
+        print('images path: ' + images_path)
         images_list = glob(os.path.join(images_path, '*.jpeg'))
         image = images_list[int(sub_idx)]
         # image = '/home/weidong/code/dr/DiabeticRetinopathy_solution/data/dme/dme/33_dr_0_dme_0.jpg'
@@ -138,6 +139,7 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         sub_idx = self.headers['sub_index']
         folder_index = self.headers['folder_index']
         images_path = os.path.join(self.root, 'test/'+str(folder_index))
+        print('images path: ' + images_path)
         images_list = glob(os.path.join(images_path, '*.jpeg'))
         image = images_list[int(sub_idx)]
         # image = '/home/weidong/code/dr/DiabeticRetinopathy_solution/data/dme/dme/34_dr_2_dme_1.jpg'
