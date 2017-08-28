@@ -117,10 +117,10 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         print('begin to get kaggle train image ')
         sub_idx = self.headers['sub_index']
         folder_index = self.headers['folder_index']
-        # images_path = os.path.join(self.root, 'train/'+str(folder_index))
-        # images_list = glob(os.path.join(images_path, '*.jpg'))
-        # image = images_list[int(sub_idx)]
-        image = '/home/weidong/code/dr/DiabeticRetinopathy_solution/data/dme/dme/33_dr_0_dme_0.jpg'
+        images_path = os.path.join(self.root, 'train/'+str(folder_index))
+        images_list = glob(os.path.join(images_path, '*.jpeg'))
+        image = images_list[int(sub_idx)]
+        # image = '/home/weidong/code/dr/DiabeticRetinopathy_solution/data/dme/dme/33_dr_0_dme_0.jpg'
         data = open(image, 'rb').read()
         pil_img = Image.open(image)
         image_uid = imagehash.average_hash(pil_img)
@@ -137,10 +137,10 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         print('begin to get kaggle test image ')
         sub_idx = self.headers['sub_index']
         folder_index = self.headers['folder_index']
-        # images_path = os.path.join(self.root, 'test/'+str(folder_index))
-        # images_list = glob(os.path.join(images_path, '*.jpg'))
-        # image = images_list[int(sub_idx)]
-        image = '/home/weidong/code/dr/DiabeticRetinopathy_solution/data/dme/dme/34_dr_2_dme_1.jpg'
+        images_path = os.path.join(self.root, 'test/'+str(folder_index))
+        images_list = glob(os.path.join(images_path, '*.jpeg'))
+        image = images_list[int(sub_idx)]
+        # image = '/home/weidong/code/dr/DiabeticRetinopathy_solution/data/dme/dme/34_dr_2_dme_1.jpg'
         data = open(image, 'rb').read()
         pil_img = Image.open(image)
         image_uid = imagehash.average_hash(pil_img)
