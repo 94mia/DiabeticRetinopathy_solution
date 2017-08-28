@@ -23,6 +23,12 @@ import imagehash
 image_root = './zhizhen'
 
 
+import mdb
+db, cursor = mdb.start_db_conn1()
+cursor.execute('select * from dranddme_images_tb')
+print(cursor.fetchall())
+
+
 class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
 
     """Simple HTTP request handler with GET and HEAD commands.
@@ -62,6 +68,8 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
                 self._get_kaggle_train_image()
             elif cmd == 'get_kaggle_test_image':
                 self._get_kaggle_test_image()
+            elif cmd == 'store_kaggle_annotation_result':
+                self._store_kaggle_annotation_result()
 
     def do_POST(self):
         print('Content type: {0}'.format(self.headers['Content-type']))
@@ -145,6 +153,46 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         print('end to get kaggle test image')
 
     def _store_kaggle_annotation_result(self):
+        dr_level = int(self.headers['dr_level'])
+        dme_level = int(self.headers['dme_level'])
+        doctor_id = self.headers['doctor_id']
+        image_uid = self.headers['image_uid']
+        image_path = ''
+        cmd_inserttb = """update dranddme_images_tb set doctorid='{0}',drlevel={1},dmelevel={2} where id='{3}'""".format(doctor_id,dr_level, dme_level, image_uid)
+
+        try:
+            cmd_query = """select * from dranddme_images_tb where id='{0}'""".format(image_uid)
+            cursor.execute(cmd_query)
+            query = cursor.fetchall()
+            print(query)
+            assert len(query) <= 1
+            if len(query) == 0:
+                # imagepath = os.path.join(image_root, '{}.jpeg'.format(image_id))
+                # img.save(imagepath)
+                cmd_insert = """insert into dranddme_images_tb (id, doctorid, imagepath, drlevel, dmelevel) values ('{0}', '{1}', '{2}', {3}, {4})""".format(
+                    image_uid, doctor_id, image_path, dr_level, dme_level
+                )
+            else:
+                cmd_insert = cmd_inserttb
+            print(cmd_inserttb)
+            cursor.execute(cmd_insert)
+            cursor.execute('commit')
+        except:
+            print('database operation error!!!!')
+
+        # try:
+        #     cursor.execute(cmd_inserttb)
+        #     cursor.execute('select * from dr_image_tb')
+        #     print(cursor.fetchall())
+        #     cursor.execute('commit')
+        # except:
+        #     print('except when store kaggle annotation result!')
+
+        print('end to store kaggle annotation result')
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-type", 'text/plain')
+        self.send_header("image_uid", str(image_uid))
+        self.end_headers()
         return 501
 
 
