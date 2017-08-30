@@ -11,7 +11,7 @@ from io import BytesIO
 
 import io
 
-PORT = 8002
+PORT = 8003
 
 
 import os
@@ -21,6 +21,12 @@ import imagehash
 
 
 image_root = './zhizhen'
+
+
+import mdb
+db, cursor = mdb.start_db_conn1()
+cursor.execute('select * from dranddme_images_tb')
+print(cursor.fetchall())
 
 
 class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -62,6 +68,8 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
                 self._get_kaggle_train_image()
             elif cmd == 'get_kaggle_test_image':
                 self._get_kaggle_test_image()
+            elif cmd == 'store_kaggle_annotation_result':
+                self._store_kaggle_annotation_result()
 
     def do_POST(self):
         print('Content type: {0}'.format(self.headers['Content-type']))
@@ -109,10 +117,11 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         print('begin to get kaggle train image ')
         sub_idx = self.headers['sub_index']
         folder_index = self.headers['folder_index']
-        # images_path = os.path.join(self.root, 'train/'+str(folder_index))
-        # images_list = glob(os.path.join(images_path, '*.jpg'))
-        # image = images_list[int(sub_idx)]
-        image = '/home/weidong/code/dr/DiabeticRetinopathy_solution/data/dme/dme/33_dr_0_dme_0.jpg'
+        images_path = os.path.join(self.root, 'train/'+str(folder_index))
+        print('images path: ' + images_path)
+        images_list = glob(os.path.join(images_path, '*.jpeg'))
+        image = images_list[int(sub_idx)]
+        # image = '/home/weidong/code/dr/DiabeticRetinopathy_solution/data/dme/dme/33_dr_0_dme_0.jpg'
         data = open(image, 'rb').read()
         pil_img = Image.open(image)
         image_uid = imagehash.average_hash(pil_img)
@@ -129,10 +138,11 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         print('begin to get kaggle test image ')
         sub_idx = self.headers['sub_index']
         folder_index = self.headers['folder_index']
-        # images_path = os.path.join(self.root, 'test/'+str(folder_index))
-        # images_list = glob(os.path.join(images_path, '*.jpg'))
-        # image = images_list[int(sub_idx)]
-        image = '/home/weidong/code/dr/DiabeticRetinopathy_solution/data/dme/dme/34_dr_2_dme_1.jpg'
+        images_path = os.path.join(self.root, 'test/'+str(folder_index))
+        print('images path: ' + images_path)
+        images_list = glob(os.path.join(images_path, '*.jpeg'))
+        image = images_list[int(sub_idx)]
+        # image = '/home/weidong/code/dr/DiabeticRetinopathy_solution/data/dme/dme/34_dr_2_dme_1.jpg'
         data = open(image, 'rb').read()
         pil_img = Image.open(image)
         image_uid = imagehash.average_hash(pil_img)
@@ -145,6 +155,46 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         print('end to get kaggle test image')
 
     def _store_kaggle_annotation_result(self):
+        dr_level = int(self.headers['dr_level'])
+        dme_level = int(self.headers['dme_level'])
+        doctor_id = self.headers['doctor_id']
+        image_uid = self.headers['image_uid']
+        image_path = ''
+        cmd_inserttb = """update dranddme_images_tb set doctorid='{0}',drlevel={1},dmelevel={2} where id='{3}'""".format(doctor_id,dr_level, dme_level, image_uid)
+
+        try:
+            cmd_query = """select * from dranddme_images_tb where id='{0}'""".format(image_uid)
+            cursor.execute(cmd_query)
+            query = cursor.fetchall()
+            print(query)
+            assert len(query) <= 1
+            if len(query) == 0:
+                # imagepath = os.path.join(image_root, '{}.jpeg'.format(image_id))
+                # img.save(imagepath)
+                cmd_insert = """insert into dranddme_images_tb (id, doctorid, imagepath, drlevel, dmelevel) values ('{0}', '{1}', '{2}', {3}, {4})""".format(
+                    image_uid, doctor_id, image_path, dr_level, dme_level
+                )
+            else:
+                cmd_insert = cmd_inserttb
+            print(cmd_inserttb)
+            cursor.execute(cmd_insert)
+            cursor.execute('commit')
+        except:
+            print('database operation error!!!!')
+
+        # try:
+        #     cursor.execute(cmd_inserttb)
+        #     cursor.execute('select * from dr_image_tb')
+        #     print(cursor.fetchall())
+        #     cursor.execute('commit')
+        # except:
+        #     print('except when store kaggle annotation result!')
+
+        print('end to store kaggle annotation result')
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-type", 'text/plain')
+        self.send_header("image_uid", str(image_uid))
+        self.end_headers()
         return 501
 
 
