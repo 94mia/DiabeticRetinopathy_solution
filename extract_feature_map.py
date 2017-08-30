@@ -11,6 +11,8 @@ import drn
 from utils import quadratic_weighted_kappa, AverageMeter
 from data import *
 
+from torchvision.utils import make_grid, save_image
+
 def parse_args():
     parser = argparse.ArgumentParser(description='extract feature maps')
 
@@ -155,7 +157,13 @@ def cls_train(train_data_loader, model, criterion, optimizer, epoch, display):
         fmap.sub_(mean).div_(std)
         pic = fmap.mul(255).byte()
         pil_image = Image.fromarray(pic.numpy(), mode='L')
-        pil_image.show()
+        if num_iter % 50 == 0:
+            # pil_image.show()
+            grid = make_grid(map.cpu().data[:,2,:,:].unsqueeze(1), normalize=True)
+            ndarr = grid.mul(255).clamp(0, 255).byte().permute(1, 2, 0).numpy()
+            im = Image.fromarray(ndarr)
+            im.show()
+            save_image(map.cpu().data[:,2,:,:].unsqueeze(1), 'test.jpeg', normalize=True)
 
 
 
@@ -170,7 +178,7 @@ def main():
     criterion = nn.CrossEntropyLoss().cuda()
 
     train_data_loader = DataLoader(kaggleClsTrain(448, 512, False),
-                                   num_workers=2, batch_size=4, shuffle=True, pin_memory=True)
+                                   num_workers=2, batch_size=16, shuffle=True, pin_memory=True)
     lr = 0.001
     optimizer = optim.SGD([{'params':model.base.parameters()}, {'params':model.cls.parameters()}],
                           lr=lr)

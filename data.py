@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 from utils import TenCrop, HorizontalFlip, Affine, ColorJitter, Lighting, PILColorJitter
 import torchvision.transforms as transforms
+import os
 
 
 class kaggleClsTrain(torch.utils.data.Dataset):
@@ -237,6 +238,33 @@ class kaggleClsTest_ZZ(torch.utils.data.Dataset):
 
 	def __getitem__(self, index):
 		return self.transform(Image.open(self.image[index])), self.label[index]
+
+	def __len__(self):
+		if len(self.image) != len(self.label):
+			raise Exception("The number of images and labels should be the same.")
+		return len(self.label)
+
+
+
+
+class kaggleClsVal(torch.utils.data.Dataset):
+	def __init__(self, crop_size, scale_size):
+		super(kaggleClsVal, self).__init__()
+		self.image = ['data/kaggle/val_images/' + line.strip() + '_' + str(scale_size) + '.png' for line in open('data/kaggle/val_images.txt', 'r')]
+		self.label = torch.from_numpy(np.array(np.loadtxt('data/kaggle/val_labels.txt'), np.int))
+		with open('data/kaggle/info.json', 'r') as fp:
+			info = json.load(fp)
+		mean_values = torch.from_numpy(np.array(info['mean'], dtype=np.float32) / 255)
+		std_values = torch.from_numpy(np.array(info['std'], dtype=np.float32) / 255)
+		self.transform = transforms.Compose([
+			transforms.Scale(scale_size),
+			transforms.CenterCrop(crop_size),
+			transforms.ToTensor(),
+			transforms.Normalize(mean=mean_values, std=std_values),
+		])
+
+	def __getitem__(self, index):
+		return self.transform(Image.open(self.image[index])), self.label[index], os.path.basename(self.image[index])
 
 	def __len__(self):
 		if len(self.image) != len(self.label):

@@ -33,4 +33,5 @@ def start_db_conn():
 def close_db_conn(db):
     db.close()
 
+start_db_conn()
 

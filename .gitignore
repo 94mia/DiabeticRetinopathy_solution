@@ -10,6 +10,7 @@ data/dme
 
 *.png
 *.jpg
+*.jpeg
 
 # IntelliJ project files
 .idea
