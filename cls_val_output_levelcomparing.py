@@ -147,6 +147,7 @@ def cls_val(eval_data_loader, model, criterion, ten_crop_data_loader):
 	tot_pred = np.array([], dtype=int)
 	tot_label = np.array([], dtype=int)
 	tot_image = np.array([])
+	tot_prop = np.array([])
 	losses = AverageMeter()
 	batch_time = AverageMeter()
 	data_time = AverageMeter()
@@ -166,6 +167,10 @@ def cls_val(eval_data_loader, model, criterion, ten_crop_data_loader):
 		tot_pred = np.append(tot_pred, pred)
 		tot_label = np.append(tot_label, label)
 		tot_image = np.append(tot_image, name)
+		m = torch.nn.Softmax()
+		prop = m(final).data.cpu().numpy()
+		prop = [str(p) for p in prop]
+		tot_prop = np.append(tot_prop, prop)
 		losses.update(loss.data[0], image.size(0))
 		kappa = quadratic_weighted_kappa(tot_label, tot_pred)
 		batch_time.update(time.time() - end)
@@ -173,8 +178,8 @@ def cls_val(eval_data_loader, model, criterion, ten_crop_data_loader):
 		print('Eval: [{0}/{1}]\t' 'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
 		      'Data {data_time.avg:.3f}\t' 'Loss {loss.avg:.4f}\t'  'Kappa {kappa:.4f}\t'
 		      .format(num_iter, len(eval_data_loader), batch_time=batch_time, data_time=data_time, loss=losses, kappa=kappa))
-	data = np.column_stack((tot_image, tot_label, tot_pred))
-	df = pd.DataFrame(data, columns=['images', 'gt_level', 'pred_level'])
+	data = np.column_stack((tot_image, tot_label, tot_pred, tot_prop))
+	df = pd.DataFrame(data, columns=['images', 'gt_level', 'pred_level', 'cls_propbality'])
 	df.to_csv('./classification_result.csv')
 
 
