@@ -14,8 +14,8 @@ conn = http.client.HTTPConnection('yq01-idl-gpu-offline80.yq01.baidu.com', port=
 
 headers = {"Content-type": "text/plain", "cmd":cmds[0]}
 
-conn.request('GET', "", "", headers=headers)
-# conn.request('POST', "", "", headers=headers)
+# conn.request('GET', "", "", headers=headers)
+conn.request('POST', "", "", headers=headers)
 
 r = conn.getresponse()
 

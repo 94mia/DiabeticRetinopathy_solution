@@ -21,6 +21,9 @@ import mdb
 import imagehash
 import os
 
+import math
+from glob import glob
+
 kaggle_classifier = get_kaggle_classifier()
 zz_classifier = get_zz_classifier()
 all_classifier = get_all_classifier()
@@ -49,13 +52,31 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
 
     """
 
+    def __init__(self, request, client_address, server):
+        self.root = './kaggle'
+        self.num_perfolder = 100
+        self.kaggle_train_data_num = 35000
+        self.kaggle_test_data_num = 58000
+        print('ImageHTTPRequestHandler initialized!')
+        super(ImageHTTPRequestHandler, self).__init__(request, client_address, server)
+
     def do_GET(self):
         print('Content type: {0}'.format(self.headers['Content-type']))
         if self.headers['Content-type'] == 'image/jpeg':
             self._classify()
         elif self.headers['Content-type'] == 'text/plain':
-            print('begin outside _doctor_confirm')
-            self._doctor_confirm()
+            cmd = self.headers['cmd']
+            print('client command: ' + cmd)
+            if cmd == 'get_kaggle_train_folder':
+                self._get_kaggle_train_folder()
+            elif cmd == 'get_kaggle_test_folder':
+                self._get_kaggle_test_folder()
+            elif cmd == 'get_kaggle_train_image':
+                self._get_kaggle_train_image()
+            elif cmd == 'get_kaggle_test_image':
+                self._get_kaggle_test_image()
+            else:
+                self._doctor_confirm()
 
     def do_POST(self):
         print('Content type: {0}'.format(self.headers['Content-type']))
