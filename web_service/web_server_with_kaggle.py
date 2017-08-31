@@ -63,6 +63,7 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
             self._classify()
         elif self.headers['Content-type'] == 'text/plain':
             cmd = self.headers['cmd']
+            print('client command: '+cmd)
             if cmd == 'get_kaggle_train_folder':
                 self._get_kaggle_train_folder()
             elif cmd == 'get_kaggle_test_folder':

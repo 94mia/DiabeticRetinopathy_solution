@@ -7,7 +7,7 @@ cmds = ['get_kaggle_train_folder', 'get_kaggle_test_folder', 'get_kaggle_train_i
 
 
 # conn = http.client.HTTPConnection('127.0.0.1', port=8003)
-conn = http.client.HTTPConnection('yq01-idl-gpu-offline80.yq01.baidu.com', port=8003)
+conn = http.client.HTTPConnection('yq01-idl-gpu-offline80.yq01.baidu.com', port=8002)
 
 
 # interface 1: get kaggle train data folder number
@@ -15,6 +15,7 @@ conn = http.client.HTTPConnection('yq01-idl-gpu-offline80.yq01.baidu.com', port=
 headers = {"Content-type": "text/plain", "cmd":cmds[0]}
 
 conn.request('GET', "", "", headers=headers)
+# conn.request('POST', "", "", headers=headers)
 
 r = conn.getresponse()
 
