@@ -34,7 +34,7 @@ print(r.headers['folder_num'])
 
 
 # interface 3: get kaggle train image by folder+index
-headers = {"Content-type": "text/plain", "cmd":cmds[2], 'folder_index':'2', 'sub_index':'3'}
+headers = {"Content-type": "text/plain", "cmd":cmds[2], 'folder_index':'1', 'sub_index':'3'}
 conn.request('GET', "", "", headers=headers)
 r = conn.getresponse()
 

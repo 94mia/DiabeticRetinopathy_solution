@@ -75,6 +75,8 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
                 self._get_kaggle_train_image()
             elif cmd == 'get_kaggle_test_image':
                 self._get_kaggle_test_image()
+            elif cmd == 'store_kaggle_annotation_result':
+                self._store_kaggle_annotation_result()
             else:
                 self._doctor_confirm()
 
@@ -93,6 +95,8 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
                 self._get_kaggle_train_image()
             elif cmd == 'get_kaggle_test_image':
                 self._get_kaggle_test_image()
+            elif cmd == 'store_kaggle_annotation_result':
+                self._store_kaggle_annotation_result()
             else:
                 self._doctor_confirm()
 
