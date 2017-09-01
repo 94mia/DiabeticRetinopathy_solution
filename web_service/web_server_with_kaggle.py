@@ -218,7 +218,8 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         # image = '/home/weidong/code/dr/DiabeticRetinopathy_solution/data/dme/dme/33_dr_0_dme_0.jpg'
         data = open(image, 'rb').read()
         pil_img = Image.open(image)
-        image_uid = imagehash.average_hash(pil_img)
+        # image_uid = imagehash.average_hash(pil_img)
+        image_uid = os.path.basename(image)
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-type", 'image/jpeg')
         self.send_header("cmd", 'get_kaggle_train_image')
@@ -239,7 +240,8 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         # image = '/home/weidong/code/dr/DiabeticRetinopathy_solution/data/dme/dme/34_dr_2_dme_1.jpg'
         data = open(image, 'rb').read()
         pil_img = Image.open(image)
-        image_uid = imagehash.average_hash(pil_img)
+        # image_uid = imagehash.average_hash(pil_img)
+        image_uid = os.path.basename(image)
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-type", 'image/jpeg')
         self.send_header("cmd", 'get_kaggle_test_image')
