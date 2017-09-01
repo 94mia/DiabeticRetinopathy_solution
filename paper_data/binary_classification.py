@@ -34,7 +34,7 @@ def parse_args():
     parser.add_argument('--valcsv', default=None)
     parser.add_argument('--testcsv', default=None)
 
-    parser.add_argument('--exp', required=True, help='The name of experiment')
+    parser.add_argument('--exp', default='binary_cls', help='The name of experiment')
     parser.add_argument('--dataset', default='kaggle', choices=['kaggle'], help='The dataset to use')
     parser.add_argument('--phase', default='train')
     parser.add_argument('--model', default='googlenet', choices=['googlenet'])
@@ -272,7 +272,7 @@ def main():
     if not os.path.isdir(opt.output):
         os.makedirs(opt.output)
     time_stamp = time.strftime('%Y%m%d%H%M%S', time.localtime(time.time()))
-    output_dir = os.path.join(opt.output, opt.dataset+'_cls_'+opt.phase+'_'+time_stamp+'_'+opt.model+'_'+opt.exp)
+    output_dir = os.path.join(opt.output, opt.dataset+'_binary_cls_'+opt.phase+'_'+time_stamp+'_'+opt.model+'_'+opt.exp)
     if not os.path.exists(output_dir):
         print('====> Creating ', output_dir)
         os.makedirs(output_dir)
