@@ -1,40 +1,48 @@
 import sys
 sys.path.append('../')
-import torch
-import json
-import torchvision.transforms as transforms
-from utils import PILColorJitter, Lighting
-from PIL import Image
-import os
-import pandas as pd
-import numpy as np
 
 import argparse
+import torch
+import json
+import numpy as np
+import torchvision.transforms as transforms
+
+from utils import PILColorJitter, Lighting
+
+from PIL import Image
+
+import pandas as pd
+import os
 
 from torch.utils.data import DataLoader
 
-import torch.nn as nn
 import torchvision
-import torch.nn.functional as F
-from torch.autograd import Variable
 
-import math
+import torch.nn as nn
+
+import torch.nn.functional as F
 
 import torch.optim as optim
 
+from torch.autograd import Variable
+
 from utils import quadratic_weighted_kappa, kappa_confusion_matrix, AverageMeter
-from sklearn.metrics import confusion_matrix
+
 import time
+import math
 
 import torch.backends.cudnn as cudnn
 
+from sklearn.metrics import confusion_matrix
+
 def parse_args():
-    parser = argparse.ArgumentParser(description='multi-task classification options')
+    parser = argparse.ArgumentParser(description='multi-channel&multi-task classification options')
     parser.add_argument('--root', required=True)
+    parser.add_argument('--root_augumentation', required=True)
     parser.add_argument('--traincsv', default=None)
     parser.add_argument('--valcsv', default=None)
     parser.add_argument('--testcsv', default=None)
-    parser.add_argument('--exp', default='multi_task', help='The name of experiment')
+    parser.add_argument('--exp', default='multi_channel', help='The name of experiment')
     parser.add_argument('--batch', default=8, type=int)
     parser.add_argument('--crop', default=448, type=int)
     parser.add_argument('--size', default=512, type=int)
@@ -58,10 +66,12 @@ def parse_args():
 
     return parser.parse_args()
 
-class MultiTaskClsDataSet(torch.utils.data.Dataset):
-    def __init__(self, root, config, crop_size, scale_size, baseline=False):
-        super(MultiTaskClsDataSet, self).__init__()
+
+class MultiChannelClsDataSet(torch.utils.data.Dataset):
+    def __init__(self, root, root_ahe, config, crop_size, scale_size, baseline=False):
+        super(MultiChannelClsDataSet, self).__init__()
         self.root = root
+        self.root_ahe = root_ahe
         self.config = config
         self.crop_size = crop_size
         self.scale_size = scale_size
@@ -93,18 +103,28 @@ class MultiTaskClsDataSet(torch.utils.data.Dataset):
                 transforms.Normalize(mean=mean_values, std=std_values),
             ])
 
+        self.transform_ahe = transforms.Compose([
+            transforms.RandomCrop(crop_size),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=mean_values, std=std_values),
+        ])
+
     def __getitem__(self, item):
         return self.transform(
             Image.open(os.path.join(self.root, self.images_list[item][0] + '_' + str(self.scale_size) + '.png'))), \
+               self.transform_ahe(Image.open(os.path.join(self.root_ahe, self.images_list[item][0] + '_' + str(self.scale_size) + '_ahe.png'))), \
                self.images_list[item][1], self.images_list[item][2]
 
     def __len__(self):
         return len(self.images_list)
 
-class MultiTaskClsValDataSet(torch.utils.data.Dataset):
-    def __init__(self, root, config, crop_size, scale_size, baseline=False):
-        super(MultiTaskClsValDataSet, self).__init__()
+
+class MultiChannelClsValDataSet(torch.utils.data.Dataset):
+    def __init__(self, root, root_ahe, config, crop_size, scale_size, baseline=False):
+        super(MultiChannelClsValDataSet, self).__init__()
         self.root = root
+        self.root_ahe = root_ahe
         self.config = config
         self.crop_size = crop_size
         self.scale_size = scale_size
@@ -124,12 +144,32 @@ class MultiTaskClsValDataSet(torch.utils.data.Dataset):
             transforms.ToTensor(),
             transforms.Normalize(mean=mean_values, std=std_values),
         ])
+        self.transform_ahe = self.transform
 
     def __getitem__(self, item):
-        return self.transform(Image.open(os.path.join(self.root, self.images_list[item][0]+'_'+str(self.scale_size)+'.png'))), self.images_list[item][1], self.images_list[item][2]
+        return self.transform(Image.open(os.path.join(self.root, self.images_list[item][0]+'_'+str(self.scale_size)+'.png'))), \
+               self.transform_ahe(Image.open(
+                   os.path.join(self.root_ahe, self.images_list[item][0] + '_' + str(self.scale_size) + '_ahe.png'))), \
+               self.images_list[item][1], self.images_list[item][2]
 
     def __len__(self):
         return len(self.images_list)
+
+def dataset_test():
+    print('welcome to dataset test!')
+
+    args = parse_args()
+
+    ds = MultiChannelClsDataSet(args.root, args.root_augumentation, args.traincsv, args.crop, args.size)
+
+    train_dataloader = DataLoader(MultiChannelClsDataSet(args.root, args.root_augumentation, args.traincsv, args.crop, args.size), batch_size=args.batch,
+                                  shuffle=True, num_workers=args.workers, pin_memory=True)
+
+    for index, (image, image_ahe, dr_level, dme_level) in enumerate(train_dataloader):
+        print('dr_level: ', dr_level)
+        print('dme_level: ', dme_level)
+
+    print('bye!')
 
 def initialize_cls_weights(cls):
 	for m in cls.modules():
@@ -145,9 +185,9 @@ def initialize_cls_weights(cls):
 			m.weight.data.normal_(0, 0.01)
 			m.bias.data.zero_()
 
-class multi_task_model(nn.Module):
+class multi_channel_model(nn.Module):
     def __init__(self, name, inmap, multi_classes, weights=None, scratch=False):
-        super(multi_task_model, self).__init__()
+        super(multi_channel_model, self).__init__()
         self.name = name
         self.weights = weights
         self.inmap = inmap
@@ -195,18 +235,20 @@ class multi_task_model(nn.Module):
         elif name == 'dsn121' or name == 'dsn161' or name == 'dsn169' or name == 'dsn201':
             self.base = list(base_model.children())[0]
 
-        self.cls0 = nn.Linear(self.planes, multi_classes[0])
-        self.cls1 = nn.Linear(self.planes, multi_classes[1])
+        self.cls0 = nn.Linear(self.planes*2, multi_classes[0])
+        self.cls1 = nn.Linear(self.planes*2, multi_classes[1])
         if len(multi_classes) == 3:
-            self.cls2 = nn.Linear(self.planes, multi_classes[2])
+            self.cls2 = nn.Linear(self.planes*2, multi_classes[2])
 
         initialize_cls_weights(self.cls0)
         initialize_cls_weights(self.cls1)
         if weights:
             self.load_state_dict(torch.load(weights))
 
-    def forward(self, x):
-        feature = self.base(x)
+    def forward(self, x1, x2):
+        feature1 = self.base(x1)
+        feature2 = self.base(x2)
+        feature = torch.cat((feature1, feature2), dim=1)
         # when 'inplace=True', some errors occur!!!!!!!!!!!!!!!!!!!!!!
         out = F.relu(feature, inplace=False)
         out = F.avg_pool2d(out, kernel_size=self.featmap).view(feature.size(0), -1)
@@ -214,29 +256,13 @@ class multi_task_model(nn.Module):
         out2 = self.cls1(out)
         return out1, out2
 
-def dataset_test():
-    print('welcome to dataset test!')
-
-    args = parse_args()
-
-    ds = MultiTaskClsValDataSet(args.root, args.traincsv, args.crop, args.size)
-
-    train_dataloader = DataLoader(MultiTaskClsValDataSet(args.root, args.traincsv, args.crop, args.size), batch_size=args.batch,
-                                  shuffle=False, num_workers=args.workers, pin_memory=False)
-
-    for index, (image, dr_level, dme_level) in enumerate(train_dataloader):
-        print('dr_level: ', dr_level)
-        print('dme_level: ', dme_level)
-
-    print('bye!')
-
 def model_test():
     print('welcome to model test!')
     args = parse_args()
-    train_dataloader = DataLoader(MultiTaskClsValDataSet(args.root, args.traincsv, args.crop, args.size),
+    train_dataloader = DataLoader(MultiChannelClsValDataSet(args.root, args.root_augumentation, args.traincsv, args.crop, args.size),
                                   batch_size=args.batch,
-                                  shuffle=False, num_workers=args.workers, pin_memory=False)
-    model = multi_task_model(args.model, inmap=args.crop, multi_classes=[5,4])
+                                  shuffle=True, num_workers=args.workers, pin_memory=True)
+    model = multi_channel_model(args.model, inmap=args.crop, multi_classes=[5,4])
     optimizer = optim.SGD([{'params': model.base.parameters()},
                        {'params': model.cls0.parameters()},
                        {'params': model.cls1.parameters()}], lr=args.lr, momentum=args.mom, weight_decay=args.wd,
@@ -244,8 +270,8 @@ def model_test():
     model = nn.DataParallel(model).cuda()
     criterion = nn.CrossEntropyLoss().cuda()
     for epoch in range(3):
-        for index, (image, dr_level, dme_level) in enumerate(train_dataloader):
-            o_dr, o_dme = model(Variable(image.cuda()))
+        for index, (image, image_ahe, dr_level, dme_level) in enumerate(train_dataloader):
+            o_dr, o_dme = model(Variable(image.cuda()), Variable(image_ahe.cuda()))
             o_dr_loss = criterion(o_dr, Variable(dr_level.cuda()))
             o_dme_loss = criterion(o_dme, Variable(dme_level.cuda()))
             loss = 0.5 * o_dr_loss + 0.5 * o_dme_loss
@@ -253,6 +279,7 @@ def model_test():
             loss.backward()
             optimizer.step()
             print('loss: %.4f'%loss.data[0])
+
 
 def train(train_data_loader, model, criterion, optimizer, epoch, display):
     model.train()
@@ -268,9 +295,9 @@ def train(train_data_loader, model, criterion, optimizer, epoch, display):
     losses = AverageMeter()
     end = time.time()
     logger = []
-    for index, (image, label_dr, label_dme) in enumerate(train_data_loader):
+    for index, (image, image_ahe, label_dr, label_dme) in enumerate(train_data_loader):
         data_time.update(time.time()-end)
-        o_dr, o_dme = model(Variable(image.cuda()))
+        o_dr, o_dme = model(Variable(image.cuda()), Variable(image_ahe.cuda()))
         loss_dr = criterion(o_dr, Variable(label_dr.cuda()))
         loss_dme = criterion(o_dme, Variable(label_dme.cuda()))
         loss = 0.5 * loss_dr + 0.5 * loss_dme
@@ -340,9 +367,9 @@ def eval(eval_data_loader, model, criterion):
     losses = AverageMeter()
     end = time.time()
     logger = []
-    for index, (image, label_dr, label_dme) in enumerate(eval_data_loader):
+    for index, (image, image_ahe, label_dr, label_dme) in enumerate(eval_data_loader):
         data_time.update(time.time()-end)
-        o_dr, o_dme = model(Variable(image.cuda()))
+        o_dr, o_dme = model(Variable(image.cuda()), Variable(image_ahe.cuda()))
         loss_dr = criterion(o_dr, Variable(label_dr.cuda()))
         loss_dme = criterion(o_dme, Variable(label_dme.cuda()))
         loss = 0.5 * loss_dr + 0.5 * loss_dme
@@ -397,10 +424,10 @@ def eval(eval_data_loader, model, criterion):
 def train_test():
     print('welcome to train test!')
     args = parse_args()
-    train_dataloader = DataLoader(MultiTaskClsValDataSet(args.root, args.traincsv, args.crop, args.size),
+    train_dataloader = DataLoader(MultiChannelClsDataSet(args.root, args.root_augumentation, args.traincsv, args.crop, args.size),
                                   batch_size=args.batch,
-                                  shuffle=False, num_workers=args.workers, pin_memory=False)
-    model = multi_task_model(args.model, inmap=args.crop, multi_classes=[5, 4])
+                                  shuffle=True, num_workers=args.workers, pin_memory=True)
+    model = multi_channel_model(args.model, inmap=args.crop, multi_classes=[5, 4])
     optimizer = optim.SGD([{'params': model.base.parameters()},
                            {'params': model.cls0.parameters()},
                            {'params': model.cls1.parameters()}], lr=args.lr, momentum=args.mom, weight_decay=args.wd,
@@ -409,6 +436,7 @@ def train_test():
     criterion = nn.CrossEntropyLoss().cuda()
     for epoch in range(3):
         logger = train(train_dataloader, nn.DataParallel(model).cuda(), criterion, optimizer, epoch, 10)
+
 
 def main():
     print('===> Parsing options')
@@ -420,21 +448,21 @@ def main():
         os.makedirs(opt.output)
     time_stamp = time.strftime('%Y%m%d%H%M%S', time.localtime(time.time()))
     output_dir = os.path.join(opt.output,
-                              opt.dataset + '_multi_task_cls_' + opt.phase + '_' + time_stamp + '_' + opt.model + '_' + opt.exp)
+                              opt.dataset + '_multi_channel_cls_' + opt.phase + '_' + time_stamp + '_' + opt.model + '_' + opt.exp)
     if not os.path.exists(output_dir):
         print('====> Creating ', output_dir)
         os.makedirs(output_dir)
 
     print('====> Building model:')
-    model = multi_task_model(opt.model, inmap=opt.crop, multi_classes=[5, 4], weights=opt.weight)
+    model = multi_channel_model(opt.model, inmap=opt.crop, multi_classes=[5, 4], weights=opt.weight)
     criterion = nn.CrossEntropyLoss().cuda()
 
     if opt.phase == 'train':
         print('====> Training model:')
-        dataset_train = DataLoader(MultiTaskClsDataSet(opt.root, opt.traincsv, opt.crop, opt.size),
+        dataset_train = DataLoader(MultiChannelClsDataSet(opt.root, opt.root_augumentation, opt.traincsv, opt.crop, opt.size),
                                   batch_size=opt.batch,
                                   shuffle=True, num_workers=opt.workers, pin_memory=True)
-        dataset_val = DataLoader(MultiTaskClsValDataSet(opt.root, opt.valcsv, opt.crop, opt.size),
+        dataset_val = DataLoader(MultiChannelClsValDataSet(opt.root, opt.root_augumentation, opt.valcsv, opt.crop, opt.size),
                                   batch_size=opt.batch,
                                   shuffle=False, num_workers=opt.workers, pin_memory=False)
         kp_dr_best = 0
@@ -457,17 +485,17 @@ def main():
                 print('\ncurrent best dr kappa is: {}\n'.format(kp_dr))
                 kp_dr_best = kp_dr
                 torch.save(model.cpu().state_dict(), os.path.join(output_dir,
-                                                                  opt.dataset + '_multi_task_cls_dr_' + opt.model + '_%03d' % epoch + '_best.pth'))
+                                                                  opt.dataset + '_multi_channel_cls_dr_' + opt.model + '_%03d' % epoch + '_best.pth'))
                 print('====> Save model: {}'.format(
-                    os.path.join(output_dir, opt.dataset + '_multi_task_cls_dr_' + opt.model + '_%03d' % epoch + '_best.pth')))
+                    os.path.join(output_dir, opt.dataset + '_multi_channel_cls_dr_' + opt.model + '_%03d' % epoch + '_best.pth')))
 
             if kp_dme > kp_dme_best:
                 print('\ncurrent best dr kappa is: {}\n'.format(kp_dme))
                 kp_dme_best = kp_dme
                 torch.save(model.cpu().state_dict(), os.path.join(output_dir,
-                                                                  opt.dataset + '_multi_task_cls_dme_' + opt.model + '_%03d' % epoch + '_best.pth'))
+                                                                  opt.dataset + '_multi_channel_cls_dme_' + opt.model + '_%03d' % epoch + '_best.pth'))
                 print('====> Save model: {}'.format(
-                    os.path.join(output_dir, opt.dataset + '_multi_task_cls_dme_' + opt.model + '_%03d' % epoch + '_best.pth')))
+                    os.path.join(output_dir, opt.dataset + '_multi_channel_cls_dme_' + opt.model + '_%03d' % epoch + '_best.pth')))
 
             if not os.path.isfile(os.path.join(output_dir, 'train.log')):
                 with open(os.path.join(output_dir, 'train.log'), 'w') as fp:
@@ -478,7 +506,7 @@ def main():
     elif opt.phase == 'test':
         if opt.weight:
             print('====> Evaluating model')
-            dataset_test = DataLoader(MultiTaskClsValDataSet(opt.root, opt.testcsv, opt.crop, opt.size),
+            dataset_test = DataLoader(MultiChannelClsValDataSet(opt.root, opt.root_augumentation, opt.testcsv, opt.crop, opt.size),
                                   batch_size=opt.batch,
                                   shuffle=False, num_workers=opt.workers, pin_memory=False)
             logger_val, kp_dr, kp_dme, pred_dr, label_dr, pred_dme, label_dme = eval(dataset_test, nn.DataParallel(model).cuda(), criterion)
