@@ -16,6 +16,10 @@
     - [ ] generate zhizhen(including dr&dme) data flag
     - [ ] training on zhizhen(including dr&dme) dataset
     - [ ] add binary classification to multi-task    
-- [ ] multi-view/multi-task for dr/dme classification
+- [ ] multi-channel/multi-task for dr/dme classification
+    - [x] code
+    - [x] generate data flag
+    - [ ] training
+    - [ ] test
 
     

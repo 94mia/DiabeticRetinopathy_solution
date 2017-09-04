@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=0,1,2,3 python multi_task_classification.py --root ../data/dme/512 --traincsv ../data/dme/train.csv --valcsv ../data/dme/val.csv --testcsv ../data/dme/test.csv --model rsn34 --batch 100 --workers 8 --phase val --weight $1
