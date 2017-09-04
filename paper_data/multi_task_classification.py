@@ -462,7 +462,7 @@ def main():
                     os.path.join(output_dir, opt.dataset + '_multi_task_cls_dr_' + opt.model + '_%03d' % epoch + '_best.pth')))
 
             if kp_dme > kp_dme_best:
-                print('\ncurrent best dr kappa is: {}\n'.format(kp_dme))
+                print('\ncurrent best dme kappa is: {}\n'.format(kp_dme))
                 kp_dme_best = kp_dme
                 torch.save(model.cpu().state_dict(), os.path.join(output_dir,
                                                                   opt.dataset + '_multi_task_cls_dme_' + opt.model + '_%03d' % epoch + '_best.pth'))

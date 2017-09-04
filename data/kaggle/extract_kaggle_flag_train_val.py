@@ -60,19 +60,19 @@ for index, row in df.iterrows():
 
 print(dfs)
 
-# csv_train = os.path.join(args.root, args.csvtrain)
-# csv_val = os.path.join(args.root, args.csvval)
+csv_train = os.path.join(args.root, args.csvtrain)
+csv_val = os.path.join(args.root, args.csvval)
 # csv_test = os.path.join(args.root, args.csvtest)
 #
 # train_data, test_data = train_test_split(data, test_size=args.testratio)
-# train_data, val_data = train_test_split(train_data, test_size=args.valratio)
+train_data, val_data = train_test_split(data, test_size=args.valratio)
 #
-# train_df = pd.DataFrame(train_data, columns=['image', 'dr_level', 'dme_level'])
-# val_df = pd.DataFrame(val_data, columns=['image', 'dr_level', 'dme_level'])
+train_df = pd.DataFrame(train_data, columns=['image', 'dr_level', 'dme_level'])
+val_df = pd.DataFrame(val_data, columns=['image', 'dr_level', 'dme_level'])
 # test_df = pd.DataFrame(test_data, columns=['image', 'dr_level', 'dme_level'])
 #
-# train_df.to_csv(csv_train)
-# val_df.to_csv(csv_val)
+train_df.to_csv(csv_train)
+val_df.to_csv(csv_val)
 # test_df.to_csv(csv_test)
 
 
