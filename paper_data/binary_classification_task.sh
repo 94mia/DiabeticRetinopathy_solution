@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=0,1 python binary_classification.py --root ../data/tmp/512 --traincsv ../data/tmp/train_bin.csv --valcsv ../data/tmp/val_bin.csv --testcsv ../data/tmp/test_bin.csv --workers 4 --batch 32
+CUDA_VISIBLE_DEVICES=0,1 python binary_classification.py --root ../data/bin_cls/512 --traincsv ../data/bin_cls/train_bin.csv --valcsv ../data/bin_cls/val_bin.csv --testcsv ../data/bin_cls/test_bin.csv --workers 4 --batch 32

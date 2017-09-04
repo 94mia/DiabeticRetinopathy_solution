@@ -36,7 +36,7 @@ import torch.backends.cudnn as cudnn
 from sklearn.metrics import confusion_matrix
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='multi-channel-difpathparams&multi-task classification options')
+    parser = argparse.ArgumentParser(description='multi-channel&single-task classification options')
     parser.add_argument('--root', required=True)
     parser.add_argument('--root_augumentation', required=True)
     parser.add_argument('--traincsv', default=None)
@@ -229,14 +229,11 @@ class multi_channel_model(nn.Module):
         if not scratch:
             base_model.load_state_dict(torch.load('../pretrained/'+name+'.pth'))
 
-        self.base1 = nn.Sequential(*list(base_model.children())[:-2])
-        self.base2 = nn.Sequential(*list(base_model.children())[:-2])
+        self.base = nn.Sequential(*list(base_model.children())[:-2])
         if name == 'rsn18' or name == 'rsn34' or name == 'rsn50' or name == 'rsn101' or name == 'rsn152':
-            self.base1 = nn.Sequential(*list(base_model.children())[:-2])
-            self.base2 = nn.Sequential(*list(base_model.children())[:-2])
+            self.base = nn.Sequential(*list(base_model.children())[:-2])
         elif name == 'dsn121' or name == 'dsn161' or name == 'dsn169' or name == 'dsn201':
-            self.base1 = list(base_model.children())[0]
-            self.base2 = list(base_model.children())[0]
+            self.base = list(base_model.children())[0]
 
         self.cls0 = nn.Linear(self.planes*2, multi_classes[0])
         self.cls1 = nn.Linear(self.planes*2, multi_classes[1])
@@ -249,8 +246,8 @@ class multi_channel_model(nn.Module):
             self.load_state_dict(torch.load(weights))
 
     def forward(self, x1, x2):
-        feature1 = self.base1(x1)
-        feature2 = self.base2(x2)
+        feature1 = self.base(x1)
+        feature2 = self.base(x2)
         feature = torch.cat((feature1, feature2), dim=1)
         # when 'inplace=True', some errors occur!!!!!!!!!!!!!!!!!!!!!!
         out = F.relu(feature, inplace=False)
@@ -266,8 +263,7 @@ def model_test():
                                   batch_size=args.batch,
                                   shuffle=True, num_workers=args.workers, pin_memory=True)
     model = multi_channel_model(args.model, inmap=args.crop, multi_classes=[5,4])
-    optimizer = optim.SGD([{'params': model.base1.parameters()},
-                           # {'params': model.base2.parameters()},
+    optimizer = optim.SGD([{'params': model.base.parameters()},
                        {'params': model.cls0.parameters()},
                        {'params': model.cls1.parameters()}], lr=args.lr, momentum=args.mom, weight_decay=args.wd,
                       nesterov=True)
@@ -304,7 +300,8 @@ def train(train_data_loader, model, criterion, optimizer, epoch, display):
         o_dr, o_dme = model(Variable(image.cuda()), Variable(image_ahe.cuda()))
         loss_dr = criterion(o_dr, Variable(label_dr.cuda()))
         loss_dme = criterion(o_dme, Variable(label_dme.cuda()))
-        loss = 0.5 * loss_dr + 0.5 * loss_dme
+        # loss = 0.5 * loss_dr + 0.5 * loss_dme
+        loss = loss_dr
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -376,8 +373,9 @@ def eval(eval_data_loader, model, criterion):
         o_dr, o_dme = model(Variable(image.cuda()), Variable(image_ahe.cuda()))
         loss_dr = criterion(o_dr, Variable(label_dr.cuda()))
         loss_dme = criterion(o_dme, Variable(label_dme.cuda()))
-        loss = 0.5 * loss_dr + 0.5 * loss_dme
-        batch_time.update(time.time()-end)
+        # loss = 0.5 * loss_dr + 0.5 * loss_dme
+        # loss = loss_dr
+        batch_time.updatye(time.time()-end)
         _,pred_dr = torch.max(o_dr, 1)
         _,pred_dme = torch.max(o_dme, 1)
         pred_dr = pred_dr.cpu().data.numpy().squeeze()
@@ -432,8 +430,7 @@ def train_test():
                                   batch_size=args.batch,
                                   shuffle=True, num_workers=args.workers, pin_memory=True)
     model = multi_channel_model(args.model, inmap=args.crop, multi_classes=[5, 4])
-    optimizer = optim.SGD([{'params': model.base1.parameters()},
-                           # {'params': model.base2.parameters()},
+    optimizer = optim.SGD([{'params': model.base.parameters()},
                            {'params': model.cls0.parameters()},
                            {'params': model.cls1.parameters()}], lr=args.lr, momentum=args.mom, weight_decay=args.wd,
                           nesterov=True)
@@ -453,7 +450,7 @@ def main():
         os.makedirs(opt.output)
     time_stamp = time.strftime('%Y%m%d%H%M%S', time.localtime(time.time()))
     output_dir = os.path.join(opt.output,
-                              opt.dataset + '_multi_channel_difpathparams_cls_' + opt.phase + '_' + time_stamp + '_' + opt.model + '_' + opt.exp)
+                              opt.dataset + '_multi_channel_single_task_cls_' + opt.phase + '_' + time_stamp + '_' + opt.model + '_' + opt.exp)
     if not os.path.exists(output_dir):
         print('====> Creating ', output_dir)
         os.makedirs(output_dir)
@@ -477,8 +474,7 @@ def main():
                 lr = opt.lr
             else:
                 lr = opt.lr * (0.1 ** (epoch // opt.step))
-            optimizer = optim.SGD([{'params': model.base1.parameters()},
-                                   # {'params': model.base2.parameters()},
+            optimizer = optim.SGD([{'params': model.base.parameters()},
                                    {'params': model.cls0.parameters()},
                                    {'params': model.cls1.parameters()}], lr=opt.lr, momentum=opt.mom,
                                   weight_decay=opt.wd,
@@ -496,7 +492,7 @@ def main():
                     os.path.join(output_dir, opt.dataset + '_multi_channel_cls_dr_' + opt.model + '_%03d' % epoch + '_best.pth')))
 
             if kp_dme > kp_dme_best:
-                print('\ncurrent best dr kappa is: {}\n'.format(kp_dme))
+                print('\ncurrent best dme kappa is: {}\n'.format(kp_dme))
                 kp_dme_best = kp_dme
                 torch.save(model.cpu().state_dict(), os.path.join(output_dir,
                                                                   opt.dataset + '_multi_channel_cls_dme_' + opt.model + '_%03d' % epoch + '_best.pth'))
