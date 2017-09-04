@@ -375,7 +375,7 @@ def eval(eval_data_loader, model, criterion):
         loss_dme = criterion(o_dme, Variable(label_dme.cuda()))
         # loss = 0.5 * loss_dr + 0.5 * loss_dme
         # loss = loss_dr
-        batch_time.updatye(time.time()-end)
+        batch_time.update(time.time()-end)
         _,pred_dr = torch.max(o_dr, 1)
         _,pred_dme = torch.max(o_dme, 1)
         pred_dr = pred_dr.cpu().data.numpy().squeeze()
