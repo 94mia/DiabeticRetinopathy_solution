@@ -18,6 +18,9 @@ data/dme/dme.zip
 *.jpeg
 *.csv
 
+data/kaggle_512
+mask_rcnn/annotations
+
 # IntelliJ project files
 .idea
 *.iml

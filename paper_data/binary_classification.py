@@ -37,7 +37,7 @@ def parse_args():
     parser.add_argument('--exp', default='binary_cls', help='The name of experiment')
     parser.add_argument('--dataset', default='kaggle', choices=['kaggle'], help='The dataset to use')
     parser.add_argument('--phase', default='train')
-    parser.add_argument('--model', default='googlenet', choices=['googlenet'])
+    parser.add_argument('--model', default='googlenet', choices=['googlenet', 'rsn18', 'rsn34', 'rsn50', 'rsn101', 'rsn150', 'dsn121', 'dsn161', 'dsn169', 'dsn201',])
     parser.add_argument('--batch', default=8, type=int, help='The batch size of training')
     parser.add_argument('--crop', default=448, type=int, help='The crop size of input')
     parser.add_argument('--size', default=512, type=int, choices=[128,256,512,1024], help='The scale size of input')
@@ -61,7 +61,7 @@ opt = parse_args()
 print(opt)
 
 class BinClsDataSet(torch.utils.data.Dataset):
-    def __init__(self, root, config, crop_size, scale_size, baseline=False):
+    def __init__(self, root, config, crop_size, scale_size, baseline=False, gcn=True):
         super(BinClsDataSet, self).__init__()
         self.root = root
         self.config = config
@@ -77,24 +77,42 @@ class BinClsDataSet(torch.utils.data.Dataset):
         std_values = torch.from_numpy(np.array(info['std'], dtype=np.float32) / 255)
         eigen_values = torch.from_numpy(np.array(info['eigval'], dtype=np.float32))
         eigen_vectors = torch.from_numpy(np.array(info['eigvec'], dtype=np.float32))
-        if baseline:
-            self.transform = transforms.Compose([
-                transforms.RandomCrop(crop_size),
-                transforms.Scale(299),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=mean_values, std=std_values),
-            ])
+        if gcn:
+            if baseline:
+                self.transform = transforms.Compose([
+                    transforms.RandomCrop(crop_size),
+                    transforms.Scale(299),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=mean_values, std=std_values),
+                ])
+            else:
+                self.transform = transforms.Compose([
+                    transforms.RandomCrop(crop_size),
+                    transforms.Scale(299),
+                    transforms.RandomHorizontalFlip(),
+                    PILColorJitter(),
+                    transforms.ToTensor(),
+                    Lighting(alphastd=0.01, eigval=eigen_values, eigvec=eigen_values),
+                    transforms.Normalize(mean=mean_values, std=std_values),
+                ])
         else:
-            self.transform = transforms.Compose([
-                transforms.RandomCrop(crop_size),
-                transforms.Scale(299),
-                transforms.RandomHorizontalFlip(),
-                PILColorJitter(),
-                transforms.ToTensor(),
-                Lighting(alphastd=0.01, eigval=eigen_values, eigvec=eigen_values),
-                transforms.Normalize(mean=mean_values, std=std_values),
-            ])
+            if baseline:
+                self.transform = transforms.Compose([
+                    transforms.RandomCrop(crop_size),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=mean_values, std=std_values),
+                ])
+            else:
+                self.transform = transforms.Compose([
+                    transforms.RandomCrop(crop_size),
+                    transforms.RandomHorizontalFlip(),
+                    PILColorJitter(),
+                    transforms.ToTensor(),
+                    Lighting(alphastd=0.01, eigval=eigen_values, eigvec=eigen_values),
+                    transforms.Normalize(mean=mean_values, std=std_values),
+                ])
 
     def __getitem__(self, item):
         return self.transform(Image.open(os.path.join(self.root, self.images_list[item][0]+'_'+str(self.scale_size)+'.png'))), self.images_list[item][2]
@@ -103,7 +121,7 @@ class BinClsDataSet(torch.utils.data.Dataset):
         return len(self.images_list)
 
 class BinClsDataSetVal(torch.utils.data.Dataset):
-    def __init__(self, root, config, crop_size, scale_size, baseline=False):
+    def __init__(self, root, config, crop_size, scale_size, baseline=False, gcn=True):
         super(BinClsDataSetVal, self).__init__()
         self.root = root
         self.config = config
@@ -119,12 +137,20 @@ class BinClsDataSetVal(torch.utils.data.Dataset):
         std_values = torch.from_numpy(np.array(info['std'], dtype=np.float32) / 255)
         eigen_values = torch.from_numpy(np.array(info['eigval'], dtype=np.float32))
         eigen_vectors = torch.from_numpy(np.array(info['eigvec'], dtype=np.float32))
-        self.transform = transforms.Compose([
-            transforms.CenterCrop(crop_size),
-            transforms.Scale(299),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=mean_values, std=std_values),
-        ])
+        if gcn:
+            self.transform = transforms.Compose([
+                transforms.CenterCrop(crop_size),
+                transforms.Scale(299),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=mean_values, std=std_values),
+            ])
+        else:
+            self.transform = transforms.Compose([
+                transforms.CenterCrop(crop_size),
+                # transforms.Scale(scale_size),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=mean_values, std=std_values),
+            ])
 
     def __getitem__(self, item):
         return self.transform(Image.open(os.path.join(self.root, self.images_list[item][0]+'_'+str(self.scale_size)+'.png'))), self.images_list[item][2]
@@ -192,6 +218,74 @@ class TestCls(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.fc(x)
         return x
+
+
+class multi_channel_model(nn.Module):
+    def __init__(self, name, inmap, multi_classes, weights=None, scratch=False):
+        super(multi_channel_model, self).__init__()
+        self.name = name
+        self.weights = weights
+        self.inmap = inmap
+        self.multi_classes = multi_classes
+        self.cls0 = None
+        self.cls1 = None
+        self.cls2 = None
+        self.featmap = inmap // 32
+        self.planes = 2048
+        base_model = None
+        if name == 'rsn18':
+            base_model = torchvision.models.resnet18()
+            self.planes = 512
+        elif name == 'rsn34':
+            base_model = torchvision.models.resnet34()
+            self.planes = 512
+        elif name == 'rsn50':
+            base_model = torchvision.models.resnet50()
+            self.planes = 2048
+        elif name == 'rsn101':
+            base_model = torchvision.models.resnet101()
+            self.planes = 2048
+        elif name == 'rsn152':
+            base_model = torchvision.models.resnet152()
+            self.planes = 2048
+        elif name == 'dsn121':
+            base_model = torchvision.models.densenet121()
+            self.planes = base_model.classifier.in_features
+        elif name == 'dsn161':
+            base_model = torchvision.models.densenet161()
+            self.planes = base_model.classifier.in_features
+        elif name == 'dsn169':
+            base_model = torchvision.models.densenet169()
+            self.planes = base_model.classifier.in_features
+        elif name == 'dsn201':
+            base_model = torchvision.models.densenet201()
+            self.planes = base_model.classifier.in_features
+
+        if not scratch:
+            base_model.load_state_dict(torch.load('../pretrained/'+name+'.pth'))
+
+        self.base = nn.Sequential(*list(base_model.children())[:-2])
+        if name == 'rsn18' or name == 'rsn34' or name == 'rsn50' or name == 'rsn101' or name == 'rsn152':
+            self.base = nn.Sequential(*list(base_model.children())[:-2])
+        elif name == 'dsn121' or name == 'dsn161' or name == 'dsn169' or name == 'dsn201':
+            self.base = list(base_model.children())[0]
+
+        self.cls = nn.Linear(self.planes, multi_classes)
+
+        initial_cls_weights(self.cls)
+
+        if weights:
+            self.load_state_dict(torch.load(weights))
+
+    def forward(self, x):
+        feature = self.base(x)
+        # when 'inplace=True', some errors occur!!!!!!!!!!!!!!!!!!!!!!
+        out = F.relu(feature, inplace=False)
+        out = F.avg_pool2d(out, kernel_size=self.featmap).view(feature.size(0), -1)
+        out = self.cls(out)
+        return out
+
+
 
 
 def cls_train(train_data_loader, model, criterion, optimizer, epoch, display):
@@ -279,16 +373,23 @@ def main():
 
     print('====> Building model:')
 
-    model = torchvision.models.inception_v3(True)
-    model = TestCls(model, opt.weight)
+    if opt.model == 'googlenet':
+        model = torchvision.models.inception_v3(True)
+        model = TestCls(model, opt.weight)
+    else:
+        model = multi_channel_model(opt.model, inmap=opt.crop, multi_classes=2, weights=opt.weight)
+
     model_cuda = nn.DataParallel(model).cuda()
     criterion = nn.CrossEntropyLoss().cuda()
 
+    gcn = True if opt.model == 'googlenet' else False
+
     if opt.phase == 'train':
         print('====> Training model')
-        dataset_train = DataLoader(BinClsDataSet(opt.root, opt.traincsv, opt.crop, opt.size), batch_size=opt.batch, num_workers=opt.workers,
+
+        dataset_train = DataLoader(BinClsDataSet(opt.root, opt.traincsv, opt.crop, opt.size, gcn=gcn), batch_size=opt.batch, num_workers=opt.workers,
                              shuffle=True, pin_memory=True)
-        dataset_val = DataLoader(BinClsDataSetVal(opt.root, opt.valcsv, opt.crop, opt.size), batch_size=opt.batch,
+        dataset_val = DataLoader(BinClsDataSetVal(opt.root, opt.valcsv, opt.crop, opt.size, gcn=gcn), batch_size=opt.batch,
                              num_workers=opt.workers,
                              shuffle=False, pin_memory=False)
         accuracy_best = 0
@@ -297,15 +398,25 @@ def main():
                 lr = opt.lr
             else:
                 lr = opt.lr * (0.1 ** (epoch // opt.step))
-            optimizer = optim.SGD(
-                [{'params': model.base_model0.parameters()}, {'params': model.base_model1.parameters()},
-                 {'params': model.base_model2.parameters()},
-                 {'params': model.base_model3.parameters()},
-                 {'params': model.fc.parameters()}],
-                lr=lr,
-                momentum=opt.mom,
-                weight_decay=opt.wd,
-                nesterov=True)
+
+            optimizer = None
+
+            if opt.model == 'googlenet':
+                optimizer = optim.SGD(
+                    [{'params': model.base_model0.parameters()}, {'params': model.base_model1.parameters()},
+                     {'params': model.base_model2.parameters()},
+                     {'params': model.base_model3.parameters()},
+                     {'params': model.fc.parameters()}],
+                    lr=lr,
+                    momentum=opt.mom,
+                    weight_decay=opt.wd,
+                    nesterov=True)
+            else:
+                optimizer = optim.SGD([{'params': model.base.parameters()},
+                                       {'params': model.cls.parameters()}], lr=opt.lr, momentum=opt.mom,
+                                      weight_decay=opt.wd,
+                                      nesterov=True)
+
             logger = cls_train(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer, epoch, opt.display)
 
             acc, logger_val = cls_eval(dataset_val, nn.DataParallel(model).cuda(), criterion, opt.display)
@@ -324,7 +435,7 @@ def main():
     elif opt.phase == 'test':
         if opt.weight:
             print('====> Evaluating model')
-            dataset_test = DataLoader(BinClsDataSetVal(opt.root, opt.testcsv, opt.size, opt.size), batch_size=opt.batch,
+            dataset_test = DataLoader(BinClsDataSetVal(opt.root, opt.testcsv, opt.size, opt.size, gcn=gcn), batch_size=opt.batch,
                                       num_workers=opt.workers,
                                       shuffle=False, pin_memory=False)
             acc, logger_test = cls_eval(dataset_test, nn.DataParallel(model).cuda(), criterion, opt.display)
