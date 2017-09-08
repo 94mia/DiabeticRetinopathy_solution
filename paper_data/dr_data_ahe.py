@@ -19,6 +19,9 @@ import skimage
 import scipy.misc
 from PIL import Image
 
+import threading
+import math
+
 __all__ = [
     'tight_crop',
     'channelwise_ahe',
@@ -60,6 +63,7 @@ import argparse
 def arg_parse():
     parser = argparse.ArgumentParser(description='Microaneurysm data processing')
     parser.add_argument('--root', required=True, help='the root path include following path: images, labels, ...')
+    parser.add_argument('--workers', type=int, default=1)
 
     return parser.parse_args()
 
@@ -86,13 +90,42 @@ from glob import glob
 images_list = glob(os.path.join(images_path, '*.png'))
 # images_list = glob(os.path.join(images_path, '*.jpg'))
 
-for image in images_list:
-    base_str = os.path.basename(image).split('.')[0]
-    output_file = os.path.join(ahe_images_path, base_str+'_ahe.png')
-    img = scipy.misc.imread(image)
-    img = img.astype(np.float32)
-    img /= 255
-    img_ahe = channelwise_ahe(img)
-    pilImage = Image.fromarray(skimage.util.img_as_ubyte(img_ahe))
-    pilImage.save(output_file)
-    print('{0} is preprocessed and saved to {1}'.format(image, output_file))
+# for image in images_list:
+#     base_str = os.path.basename(image).split('.')[0]
+#     output_file = os.path.join(ahe_images_path, base_str+'_ahe.png')
+#     img = scipy.misc.imread(image)
+#     img = img.astype(np.float32)
+#     img /= 255
+#     img_ahe = channelwise_ahe(img)
+#     pilImage = Image.fromarray(skimage.util.img_as_ubyte(img_ahe))
+#     pilImage.save(output_file)
+#     print('{0} is preprocessed and saved to {1}'.format(image, output_file))
+
+
+def gen_ahe_image(images_list, threadid):
+    print('===>begin: ', str(threadid))
+    print(images_list)
+    for image in images_list:
+        base_str = os.path.basename(image).split('.')[0]
+        output_file = os.path.join(ahe_images_path, base_str + '_ahe.png')
+        img = scipy.misc.imread(image)
+        img = img.astype(np.float32)
+        img /= 255
+        img_ahe = channelwise_ahe(img)
+        pilImage = Image.fromarray(skimage.util.img_as_ubyte(img_ahe))
+        pilImage.save(output_file)
+        print('{0} is preprocessed and saved to {1}'.format(image, output_file))
+    print('===>end: ', str(threadid))
+
+num = math.ceil(len(images_list) / opt.workers)
+thread_num = opt.workers
+threads = []
+
+for i in range(thread_num):
+    thread_imagelist = images_list[i*num:min((i+1)*num, len(images_list))]
+    t = threading.Thread(target=gen_ahe_image, args=(thread_imagelist, i))
+    t.start()
+    threads.append(t)
+
+for t in threads:
+    t.join()

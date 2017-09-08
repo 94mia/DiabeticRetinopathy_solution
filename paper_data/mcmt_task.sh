@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 python multi_channel_multi_task_classification.py --root ../data/zhizhen_new/LabelImages/512 --root_augumentation ../data/zhizhen_new/LabelImages/512_ahe --traincsv ../data/zhizhen_new/LabelImages/val_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_bin.csv --model rsn18 --batch 16 --workers 8 --epoch 150

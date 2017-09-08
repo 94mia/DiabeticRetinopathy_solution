@@ -166,7 +166,7 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-type", 'text/plain')
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, GET')
+        self.send_header('Access-Control-Allow-Methods', 'POST')
         self.send_header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Cookie")
         self.send_header("idx", str(idx))
         self.send_header("prop", str(prop))

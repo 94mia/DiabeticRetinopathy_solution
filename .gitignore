@@ -19,6 +19,7 @@ data/dme/dme.zip
 *.csv
 
 data/kaggle_512
+data/zhizhen_new
 mask_rcnn/annotations
 
 # IntelliJ project files

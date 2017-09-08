@@ -115,7 +115,7 @@ class BinClsDataSet(torch.utils.data.Dataset):
                 ])
 
     def __getitem__(self, item):
-        return self.transform(Image.open(os.path.join(self.root, self.images_list[item][0]+'_'+str(self.scale_size)+'.png'))), self.images_list[item][2]
+        return self.transform(Image.open(os.path.join(self.root, self.images_list[item][0]+'_'+str(self.scale_size)+'.png'))), self.images_list[item][3]
 
     def __len__(self):
         return len(self.images_list)
@@ -153,7 +153,7 @@ class BinClsDataSetVal(torch.utils.data.Dataset):
             ])
 
     def __getitem__(self, item):
-        return self.transform(Image.open(os.path.join(self.root, self.images_list[item][0]+'_'+str(self.scale_size)+'.png'))), self.images_list[item][2]
+        return self.transform(Image.open(os.path.join(self.root, self.images_list[item][0]+'_'+str(self.scale_size)+'.png'))), self.images_list[item][3]
 
     def __len__(self):
         return len(self.images_list)
@@ -325,6 +325,42 @@ def cls_train(train_data_loader, model, criterion, optimizer, epoch, display):
             logger.append(print_info)
     return logger
 
+
+'''
+sensitivity:
+
+tp/(tp+fn)
+
+specificity:
+
+tn/(tn+fp)
+'''
+def calc_sensitivity_specificity(pred, label):
+    assert len(pred) == len(label)
+    tp_cnt = 0
+    tn_cnt = 0
+    fp_cnt = 0
+    fn_cnt = 0
+    # print(pred)
+    # print(label)
+    for i in range(0, len(pred)):
+        if pred[i] == 1:
+            if label[i] == 1:
+                tp_cnt += 1
+            else:
+                fp_cnt += 1
+        else:
+            if label[i] == 1:
+                fn_cnt += 1
+            else:
+                tn_cnt += 1
+
+    sensitivity = tp_cnt/(fp_cnt+fn_cnt) if (fp_cnt+fn_cnt)>0 else 0
+    specificity = tn_cnt/(tn_cnt+fp_cnt) if (tn_cnt+fp_cnt)>0 else 0
+
+    return sensitivity, specificity
+
+
 def cls_eval(eval_data_loader, model, criterion, display):
     model.eval()
     tot_pred = np.array([], dtype=int)
@@ -344,6 +380,10 @@ def cls_eval(eval_data_loader, model, criterion, display):
         label = label.numpy().squeeze()
         losses.update(loss.data[0], len(image))
         batch_time.update(time.time()-end)
+
+        tot_pred = np.append(tot_pred, pred)
+        tot_label = np.append(tot_label, label)
+
         accuracy.update(np.equal(pred, label).sum()/len(label), len(label))
         end = time.time()
         print_info = 'Eval: [{0}/{1}]\tTime {batch_time.val:3f} ({batch_time.avg:.3f})\t' \
@@ -353,6 +393,12 @@ def cls_eval(eval_data_loader, model, criterion, display):
         )
         logger.append(print_info)
         print(print_info)
+
+    sensitivity, specificity = calc_sensitivity_specificity(tot_pred, tot_label)
+    print_info1 = '\nsensitivity: {0:.4f}\t specificity: {1:.4f}\n'.format(sensitivity, specificity)
+    logger.append(print_info1)
+    print(print_info1)
+
     return accuracy.avg, logger
 
 def main():
@@ -440,7 +486,8 @@ def main():
                                       shuffle=False, pin_memory=False)
             acc, logger_test = cls_eval(dataset_test, nn.DataParallel(model).cuda(), criterion, opt.display)
             with open(os.path.join(output_dir, 'test.log'), 'w') as fp:
-                fp.write(str(opt) + '\n')
+                fp.write('\n' + '\n'.join(logger_test))
+                fp.write('\n' + str(opt) + '\n')
                 fp.write('\n====> Accuracy: %.4f' % acc)
             print('\n====> Accuracy: %.4f' % acc)
         else:
