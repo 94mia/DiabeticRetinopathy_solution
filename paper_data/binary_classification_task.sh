@@ -47,6 +47,11 @@
 #CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/dme/512 --traincsv ../data/dme/train_multi.csv --valcsv ../data/dme/val_multi.csv --testcsv ../data/dme/test_bin.csv --workers 8 --batch 16 --epoch 30 --model dsn121
 
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/kaggle/512 --traincsv ../data/kaggle/train_multi.csv --valcsv ../data/kaggle/val_multi.csv --testcsv ../data/kaggle/test_bin.csv --workers 8 --batch 64 --epoch 30 --model rsn34
-CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/kaggle/512 --traincsv ../data/kaggle/train_multi.csv --valcsv ../data/kaggle/val_multi.csv --testcsv ../data/kaggle/test_bin.csv --workers 8 --batch 64 --epoch 30
-CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/kaggle/512 --traincsv ../data/kaggle/train_multi.csv --valcsv ../data/kaggle/val_multi.csv --testcsv ../data/kaggle/test_bin.csv --workers 8 --batch 16 --epoch 30 --model dsn121
+#CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/kaggle/512 --traincsv ../data/kaggle/train_multi.csv --valcsv ../data/kaggle/val_multi.csv --testcsv ../data/kaggle/test_bin.csv --workers 8 --batch 64 --epoch 30 --model rsn34
+#CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/kaggle/512 --traincsv ../data/kaggle/train_multi.csv --valcsv ../data/kaggle/val_multi.csv --testcsv ../data/kaggle/test_bin.csv --workers 8 --batch 64 --epoch 30
+#CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/kaggle/512 --traincsv ../data/kaggle/train_multi.csv --valcsv ../data/kaggle/val_multi.csv --testcsv ../data/kaggle/test_bin.csv --workers 8 --batch 16 --epoch 30 --model dsn121
+
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen-old/512 --traincsv ../data/zhizhen-old/train_multi.csv --valcsv ../data/zhizhen-old/val_multi.csv --testcsv ../data/zhizhen-old/test_bin.csv --workers 8 --batch 128 --epoch 30 --model rsn34
+CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen-old/512 --traincsv ../data/zhizhen-old/train_multi.csv --valcsv ../data/zhizhen-old/val_multi.csv --testcsv ../data/zhizhen-old/test_bin.csv --workers 8 --batch 200 --epoch 30
+CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen-old/512 --traincsv ../data/zhizhen-old/train_multi.csv --valcsv ../data/zhizhen-old/val_multi.csv --testcsv ../data/zhizhen-old/test_bin.csv --workers 8 --batch 32 --epoch 30 --model dsn121
