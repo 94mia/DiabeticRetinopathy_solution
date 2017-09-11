@@ -22,4 +22,16 @@
     - [ ] training
     - [ ] test
 
+
+## expriment
+
+- [ ] single-channel-multi-task
+    - [ ] kaggle rsn34
+    - [ ] zhizhen-new rsn34
+    - [ ] zhizhen-old rsn34
+- [ ] binary-cls
+    - [ ] kaggle googlenet/rsn34
+    - [ ] zhizhen-old googlenet/rsn34
+    - [ ] zhizhen-new googlenet/rsn34
+    
     
