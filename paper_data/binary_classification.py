@@ -355,7 +355,7 @@ def calc_sensitivity_specificity(pred, label):
             else:
                 tn_cnt += 1
 
-    sensitivity = tp_cnt/(fp_cnt+fn_cnt) if (fp_cnt+fn_cnt)>0 else 0
+    sensitivity = tp_cnt/(tp_cnt+fn_cnt) if (tp_cnt+fn_cnt)>0 else 0
     specificity = tn_cnt/(tn_cnt+fp_cnt) if (tn_cnt+fp_cnt)>0 else 0
 
     return sensitivity, specificity

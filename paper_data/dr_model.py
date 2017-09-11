@@ -33,6 +33,90 @@ import torch.backends.cudnn as cudnn
 from sklearn.metrics import confusion_matrix
 
 
+class SingleChannelClsDataSet(torch.utils.data.Dataset):
+    def __init__(self, root, root_ahe, config, crop_size, scale_size, baseline=False):
+        super(SingleChannelClsDataSet, self).__init__()
+        self.root = root
+        self.root_ahe = root_ahe
+        self.config = config
+        self.crop_size = crop_size
+        self.scale_size = scale_size
+        self.baseline = baseline
+        df = pd.DataFrame.from_csv(config)
+        self.images_list = []
+        for index, row in df.iterrows():
+            self.images_list.append(row)
+        with open('info.json', 'r') as fp:
+            info = json.load(fp)
+        mean_values = torch.from_numpy(np.array(info['mean'], dtype=np.float32) / 255)
+        std_values = torch.from_numpy(np.array(info['std'], dtype=np.float32) / 255)
+        eigen_values = torch.from_numpy(np.array(info['eigval'], dtype=np.float32))
+        eigen_vectors = torch.from_numpy(np.array(info['eigvec'], dtype=np.float32))
+        if baseline:
+            self.transform = transforms.Compose([
+                transforms.RandomCrop(crop_size),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=mean_values, std=std_values),
+            ])
+        else:
+            self.transform = transforms.Compose([
+                transforms.RandomCrop(crop_size),
+                transforms.RandomHorizontalFlip(),
+                PILColorJitter(),
+                transforms.ToTensor(),
+                Lighting(alphastd=0.01, eigval=eigen_values, eigvec=eigen_values),
+                transforms.Normalize(mean=mean_values, std=std_values),
+            ])
+
+        self.transform_ahe = transforms.Compose([
+            transforms.RandomCrop(crop_size),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=mean_values, std=std_values),
+        ])
+
+    def __getitem__(self, item):
+        return self.transform(
+            Image.open(os.path.join(self.root, self.images_list[item][0] + '_' + str(self.scale_size) + '.png'))), \
+               self.images_list[item][1], self.images_list[item][2], self.images_list[item][3]
+
+    def __len__(self):
+        return len(self.images_list)
+
+class SingleChannelClsValDataSet(torch.utils.data.Dataset):
+    def __init__(self, root, root_ahe, config, crop_size, scale_size, baseline=False):
+        super(SingleChannelClsValDataSet, self).__init__()
+        self.root = root
+        self.root_ahe = root_ahe
+        self.config = config
+        self.crop_size = crop_size
+        self.scale_size = scale_size
+        df = pd.DataFrame.from_csv(config)
+        self.images_list = []
+        for index, row in df.iterrows():
+            self.images_list.append(row)
+        with open('info.json', 'r') as fp:
+            info = json.load(fp)
+        mean_values = torch.from_numpy(np.array(info['mean'], dtype=np.float32) / 255)
+        std_values = torch.from_numpy(np.array(info['std'], dtype=np.float32) / 255)
+        eigen_values = torch.from_numpy(np.array(info['eigval'], dtype=np.float32))
+        eigen_vectors = torch.from_numpy(np.array(info['eigvec'], dtype=np.float32))
+        self.transform = transforms.Compose([
+            transforms.Scale(self.scale_size),
+            transforms.CenterCrop(self.crop_size),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=mean_values, std=std_values),
+        ])
+        self.transform_ahe = self.transform
+
+    def __getitem__(self, item):
+        return self.transform(Image.open(os.path.join(self.root, self.images_list[item][0]+'_'+str(self.scale_size)+'.png'))), \
+               self.images_list[item][1], self.images_list[item][2], self.images_list[item][3]
+
+    def __len__(self):
+        return len(self.images_list)
+
 def initialize_cls_weights(cls):
 	for m in cls.modules():
 		if isinstance(m, nn.Conv2d):

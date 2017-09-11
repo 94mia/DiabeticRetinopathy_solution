@@ -9,9 +9,9 @@ from sklearn.cross_validation import train_test_split
 def parse_args():
     parser = argparse.ArgumentParser(description='extract dr&dme flags')
     parser.add_argument('--root', required=True)
-    parser.add_argument('--csvtrain', default='train.csv')
-    parser.add_argument('--csvval', default='val.csv')
-    parser.add_argument('--csvtest', default='test.csv')
+    parser.add_argument('--csvtrain', default='train_multi.csv')
+    parser.add_argument('--csvval', default='val_multi.csv')
+    parser.add_argument('--csvtest', default='test_multi.csv')
     parser.add_argument('--valratio', type=float, default=0.1)
     parser.add_argument('--testratio', type=float, default=0.2)
 
@@ -55,7 +55,7 @@ for img in images_list:
 
 referable_list = []
 
-for i in range(len(images_list)):
+for i in range(len(images_list_filtered)):
     dr = dr_list_filtered[i]
     dme = dme_list_filtered[i]
     if dr >=2 and dme > 0:
