@@ -1,0 +1,58 @@
+1. 是否数据比例引起？似乎不是，具体比例如下：
+
+train:
+
+dr cnt0: 0.5959
+dr cnt1: 0.0141
+dr cnt2: 0.2605
+dr cnt3: 0.0781
+dr cnt4: 0.0513
+
+dme cnt0: 0.7941
+dme cnt1: 0.1098
+dme cnt2: 0.0610
+dme cnt3: 0.0352
+
+referable cnt0: 0.7613
+referable cnt1: 0.2387
+
+
+val:
+
+dr cnt0: 0.5998
+dr cnt1: 0.0145
+dr cnt2: 0.2503
+dr cnt3: 0.0798
+dr cnt4: 0.0556
+
+dme cnt0: 0.7973
+dme cnt1: 0.1029
+dme cnt2: 0.0590
+dme cnt3: 0.0409
+
+referable cnt0: 0.7641
+referable cnt1: 0.2359
+
+
+test:
+
+dr cnt0: 0.5963
+dr cnt1: 0.0141
+dr cnt2: 0.2579
+dr cnt3: 0.0794
+dr cnt4: 0.0523
+
+dme cnt0: 0.7927
+dme cnt1: 0.1095
+dme cnt2: 0.0621
+dme cnt3: 0.0357
+
+referable cnt0: 0.7610
+referable cnt1: 0.2390
+
+
+2. 是否数据提取时出错？
+
+
+
+

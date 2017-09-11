@@ -53,21 +53,31 @@ for img in images_list:
     dr_list_filtered.append(dr_level)
     dme_list_filtered.append(dme_level)
 
-assert len(images_list_filtered) == len(dr_list_filtered) == len(dme_list_filtered)
+referable_list = []
+
+for i in range(len(images_list)):
+    dr = dr_list_filtered[i]
+    dme = dme_list_filtered[i]
+    if dr >=2 and dme > 0:
+        referable_list.append(1)
+    else:
+        referable_list.append(0)
+
+assert len(images_list_filtered) == len(dr_list_filtered) == len(dme_list_filtered) == len(referable_list)
 
 print('filtered images count is: {}'.format(len(images_list_filtered)))
 
-data = np.column_stack((images_list_filtered, dr_list_filtered, dme_list_filtered))
+data = np.column_stack((images_list_filtered, dr_list_filtered, dme_list_filtered, referable_list))
 
 train_data, test_data = train_test_split(data, test_size=args.testratio)
 
 train_data, val_data = train_test_split(train_data, test_size=args.valratio)
 
-df = pd.DataFrame(data, columns=['image', 'dr_level', 'dme_level'])
+df = pd.DataFrame(data, columns=['image', 'dr_level', 'dme_level', 'totreat'])
 
-train_df = pd.DataFrame(train_data, columns=['image', 'dr_level', 'dme_level'])
-val_df = pd.DataFrame(val_data, columns=['image', 'dr_level', 'dme_level'])
-test_df = pd.DataFrame(test_data, columns=['image', 'dr_level', 'dme_level'])
+train_df = pd.DataFrame(train_data, columns=['image', 'dr_level', 'dme_level', 'totreat'])
+val_df = pd.DataFrame(val_data, columns=['image', 'dr_level', 'dme_level', 'totreat'])
+test_df = pd.DataFrame(test_data, columns=['image', 'dr_level', 'dme_level', 'totreat'])
 
 # df.to_csv(csv_file)
 train_df.to_csv(csv_train)

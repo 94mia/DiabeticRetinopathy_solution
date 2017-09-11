@@ -469,7 +469,7 @@ def train_dr(train_data_loader, model, criterion, optimizer, epoch, display):
         loss_dr = criterion(o_dr, Variable(label_dr.cuda()))
         loss_dme = criterion(o_dme, Variable(label_dme.cuda()))
         loss_bin = criterion(o_bin, Variable(label_bin.cuda()))
-        loss = loss_bin
+        loss = loss_dr
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -557,7 +557,7 @@ def train_dme(train_data_loader, model, criterion, optimizer, epoch, display):
         loss_dr = criterion(o_dr, Variable(label_dr.cuda()))
         loss_dme = criterion(o_dme, Variable(label_dme.cuda()))
         loss_bin = criterion(o_bin, Variable(label_bin.cuda()))
-        loss = loss_bin
+        loss = loss_dme
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -842,7 +842,7 @@ def eval_bin(eval_data_loader, model, criterion):
                      'DR_Accuracy {dr_acc:.4f}\t' \
                      'DME_Kappa {dme_kappa:.4f}\t' \
                      'DME_Accuracy {dme_acc:.4f}\t' \
-                     'To_Treat_Accuray {accuracy:.4f}\t'.format(iter=index, tot=len(eval_data_loader),
+                     'To_Treat_Accuray {accuracy.avg:.4f}\t'.format(iter=index, tot=len(eval_data_loader),
                                                            batch_time=batch_time,
                                                            data_time=data_time,
                                                            loss=losses,
@@ -962,7 +962,7 @@ def main():
 
 
 
-            if epoch % 5 == 0:
+            if epoch % 500 == 200:
                 logger_dme_ft = train_dme(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer_dme_ft, epoch, opt.display)
                 logger_bin_ft = train_bin(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer_bin_ft,
                                           epoch, opt.display)
@@ -973,7 +973,8 @@ def main():
 
             # logger = train(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer, epoch, opt.display)
 
-            logger_val, kp_dr, kp_dme, _,_,_,_ = eval(dataset_val, nn.DataParallel(model).cuda(), criterion)
+            # logger_val, kp_dr, kp_dme, _,_,_,_ = eval(dataset_val, nn.DataParallel(model).cuda(), criterion)
+            logger_val, kp_dr, kp_dme, _, _, _, _ = eval_bin(dataset_val, nn.DataParallel(model).cuda(), criterion)
 
             if kp_dr > kp_dr_best:
                 print('\ncurrent best dr kappa is: {}\n'.format(kp_dr))

@@ -28,8 +28,15 @@
 
 
 
-### GPU server
+#### GPU server
+#
+#CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/val_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_bin.csv --workers 4 --batch 64 --epoch 30 --model rsn34
+#CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/val_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_bin.csv --workers 4 --batch 64 --epoch 30
+#CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/val_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_bin.csv --workers 4 --batch 16 --epoch 30 --model dsn121
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/val_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_bin.csv --workers 4 --batch 64 --epoch 30 --model rsn34
-CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/val_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_bin.csv --workers 4 --batch 64 --epoch 30
-CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/val_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_bin.csv --workers 4 --batch 16 --epoch 30 --model dsn121
+
+### local server
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_bin.csv --workers 8 --batch 64 --epoch 30 --model rsn34
+CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_bin.csv --workers 8 --batch 64 --epoch 30
+CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_bin.csv --workers 8 --batch 16 --epoch 30 --model dsn121
