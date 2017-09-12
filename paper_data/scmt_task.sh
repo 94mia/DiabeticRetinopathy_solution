@@ -15,6 +15,6 @@
 #CUDA_VISIBLE_DEVICES=0,1 python single_channel_multi_task_cls.py --root ../data/kaggle/512 --traincsv ../data/kaggle/train_multi.csv --valcsv ../data/kaggle/val_multi.csv --testcsv ../data/kaggle/train_multi.csv --model rsn34 --batch 32 --workers 8 --epoch 100 --display 50 --crop 512 --size 512 --weight ./output/kaggle_multi_task_cls_train_20170911202411_rsn34_multi_task/kaggle_multi_task_cls_dr_rsn34_021_best.pth --phase test
 
 
-CUDA_VISIBLE_DEVICES=0,1 python single_channel_multi_task_cls.py --root ../data/kaggle/512 --traincsv ../data/kaggle/train_multi.csv --valcsv ../data/kaggle/val_multi.csv --testcsv ../data/kaggle/test_multi.csv --model rsn34 --batch 64 --workers 8 --epoch 100 --display 50
+CUDA_VISIBLE_DEVICES=0,1,2,3 python single_channel_multi_task_cls.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/data_multi.csv --model rsn34 --batch 200 --workers 8 --epoch 150 --display 50 --crop 448 --size 512
 
 #CUDA_VISIBLE_DEVICES=0,1 python single_channel_multi_task_cls.py --root ../data/kaggle/512 --traincsv ../data/kaggle/train_multi.csv --valcsv ../data/kaggle/val_multi.csv --testcsv ../data/kaggle/test_multi.csv --model dsn121 --batch 8 --workers 4 --epoch 100 --display 50
