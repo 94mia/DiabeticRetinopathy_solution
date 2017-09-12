@@ -868,7 +868,7 @@ def main():
             dataset_test = DataLoader(MultiTaskClsValDataSet(opt.root, opt.testcsv, opt.crop, opt.size),
                                   batch_size=opt.batch,
                                   shuffle=False, num_workers=opt.workers, pin_memory=False)
-            logger_val, kp_dr, kp_dme, pred_dr, label_dr, pred_dme, label_dme = eval(dataset_test, nn.DataParallel(model).cuda(), criterion)
+            logger_val, kp_dr, kp_dme, pred_dr, label_dr, pred_dme, label_dme = eval_bin(dataset_test, nn.DataParallel(model).cuda(), criterion)
             print('===> DR Kappa: %.4f' % kp_dr)
             print('===> Confusion Matrix:')
             dr_confusion_matrix = str(confusion_matrix(label_dr, pred_dr))
