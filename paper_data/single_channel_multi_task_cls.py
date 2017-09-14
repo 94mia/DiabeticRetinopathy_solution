@@ -419,6 +419,94 @@ def train_dr(train_data_loader, model, criterion, optimizer, epoch, display):
 
     return logger
 
+def train_dr_and_dme(train_data_loader, model, criterion, optimizer, epoch, display):
+    model.train()
+    tot_pred_dr = np.array([], dtype=int)
+    tot_label_dr = np.array([], dtype=int)
+    tot_pred_dme = np.array([], dtype=int)
+    tot_label_dme = np.array([], dtype=int)
+    tot_pred_bin = np.array([], dtype=int)
+    tot_label_bin = np.array([], dtype=int)
+    batch_time = AverageMeter()
+    data_time = AverageMeter()
+    accuracy = AverageMeter()
+    losses_dr = AverageMeter()
+    losses_dme = AverageMeter()
+    losses_bin = AverageMeter()
+    losses = AverageMeter()
+    accuracy = AverageMeter()
+    end = time.time()
+    logger = []
+    for index, (image, label_dr, label_dme, label_bin) in enumerate(train_data_loader):
+        data_time.update(time.time()-end)
+        o_dr, o_dme, o_bin = model(Variable(image.cuda()))
+        loss_dr = criterion(o_dr, Variable(label_dr.cuda()))
+        loss_dme = criterion(o_dme, Variable(label_dme.cuda()))
+        loss_bin = criterion(o_bin, Variable(label_bin.cuda()))
+        loss = loss_dr + loss_dme
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        batch_time.update(time.time()-end)
+        _,pred_dr = torch.max(o_dr, 1)
+        _,pred_dme = torch.max(o_dme, 1)
+        _,pred_bin = torch.max(o_bin, 1)
+        pred_dr = pred_dr.cpu().data.numpy().squeeze()
+        label_dr = label_dr.numpy().squeeze()
+        pred_dme = pred_dme.cpu().data.numpy().squeeze()
+        label_dme = label_dme.numpy().squeeze()
+        pred_bin = pred_bin.cpu().data.numpy().squeeze()
+        label_bin = label_bin.numpy().squeeze()
+
+        tot_pred_dr = np.append(tot_pred_dr, pred_dr)
+        tot_label_dr = np.append(tot_label_dr, label_dr)
+        tot_pred_dme = np.append(tot_pred_dme, pred_dme)
+        tot_label_dme = np.append(tot_label_dme, label_dme)
+        tot_pred_bin = np.append(tot_pred_bin, pred_bin)
+        tot_label_bin = np.append(tot_label_bin, label_bin)
+
+
+        #precision
+        losses_dr.update(loss_dr.data[0], len(image))
+        losses_dme.update(loss_dme.data[0], len(image))
+        losses_bin.update(loss_bin.data[0], len(image))
+        losses.update(loss.data[0], len(image))
+
+        accuracy.update(np.equal(pred_bin, label_bin).sum() / len(label_bin), len(label_bin))
+
+
+        if index % display == 0:
+            dr_accuracy = np.equal(tot_pred_dr, tot_label_dr).sum()/len(tot_pred_dr)
+            dme_accuracy = np.equal(tot_pred_dme, tot_label_dme).sum()/len(tot_pred_dme)
+            dr_kappa = quadratic_weighted_kappa(tot_label_dr, tot_pred_dr)
+            dme_kappa = quadratic_weighted_kappa(tot_label_dme, tot_pred_dme)
+            print_info = 'Epoch: [{epoch}][{iter}/{tot}]\t' \
+                         'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t' \
+                         'Data {data_time.avg:.3f}\t ' \
+                         'Loss {loss.avg:.4f}\t' \
+                         'DR_Loss {dr_loss.avg:.4f}\t' \
+                         'DME_Loss {dme_loss.avg:.4f}\t' \
+                         'DR_Kappa {dr_kappa:.4f}\t' \
+                         'DR_Accuracy {dr_acc:.4f}\t' \
+                         'DME_Kappa {dme_kappa:.4f}\t' \
+                         'DME_Accuracy {dme_acc:.4f}\t' \
+                         'To_Treat_Accuracy {accuracy.avg:.4f}\t'.format(epoch=epoch, iter=index, tot=len(train_data_loader),
+                                                               batch_time=batch_time,
+                                                               data_time=data_time,
+                                                               loss=losses,
+                                                               dr_loss=losses_dr,
+                                                               dme_loss=losses_dme,
+                                                               dr_acc=dr_accuracy,
+                                                               dme_acc=dme_accuracy,
+                                                               dr_kappa=dr_kappa,
+                                                               dme_kappa=dme_kappa,
+                                                               accuracy=accuracy
+                                                               )
+            print(print_info)
+            logger.append(print_info)
+
+    return logger
+
 def train_dme(train_data_loader, model, criterion, optimizer, epoch, display):
     model.train()
     tot_pred_dr = np.array([], dtype=int)
@@ -829,14 +917,19 @@ def main():
                                          weight_decay=opt.wd,
                                          nesterov=True)
             # logger = train(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer, epoch, opt.display)
-            if epoch % 500 == 200:
-                logger_dme_ft = train_dme(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer_dme_ft, epoch, opt.display)
-                logger_bin_ft = train_bin(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer_bin_ft,
-                                          epoch, opt.display)
-                logger = logger_bin_ft
-            else:
-                logger_dr = train_dr(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer_dr_only, epoch, opt.display)
-                logger = logger_dr
+
+            # if epoch % 500 < 200:
+            #     logger_dme_ft = train_dme(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer_dme_ft, epoch, opt.display)
+            #     logger_bin_ft = train_bin(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer_bin_ft,
+            #                               epoch, opt.display)
+            #     logger = logger_bin_ft
+            # else:
+            #     logger_dr = train_dr(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer_dr_only, epoch, opt.display)
+            #     logger = logger_dr
+
+            logger = train_dr_and_dme(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer, epoch,
+                                      opt.display)
+
             # logger_val, kp_dr, kp_dme, _,_,_,_ = eval(dataset_val, nn.DataParallel(model).cuda(), criterion)
             logger_val, kp_dr, kp_dme, _, _, _, _ = eval_bin(dataset_val, nn.DataParallel(model).cuda(), criterion)
 
