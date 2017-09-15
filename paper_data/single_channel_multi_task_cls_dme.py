@@ -764,6 +764,40 @@ def eval(eval_data_loader, model, criterion):
 
     return logger, dr_kappa, dme_kappa, tot_pred_dr, tot_label_dr, tot_pred_dme, tot_label_dme
 
+'''
+sensitivity:
+
+tp/(tp+fn)
+
+specificity:
+
+tn/(tn+fp)
+'''
+def calc_sensitivity_specificity(pred, label):
+    assert len(pred) == len(label)
+    tp_cnt = 0
+    tn_cnt = 0
+    fp_cnt = 0
+    fn_cnt = 0
+    # print(pred)
+    # print(label)
+    for i in range(0, len(pred)):
+        if pred[i] == 1:
+            if label[i] == 1:
+                tp_cnt += 1
+            else:
+                fp_cnt += 1
+        else:
+            if label[i] == 1:
+                fn_cnt += 1
+            else:
+                tn_cnt += 1
+
+    sensitivity = tp_cnt/(tp_cnt+fn_cnt) if (tp_cnt+fn_cnt)>0 else 0
+    specificity = tn_cnt/(tn_cnt+fp_cnt) if (tn_cnt+fp_cnt)>0 else 0
+
+    return sensitivity, specificity
+
 def eval_bin(eval_data_loader, model, criterion):
     model.eval()
     tot_pred_dr = np.array([], dtype=int)
@@ -845,6 +879,81 @@ def eval_bin(eval_data_loader, model, criterion):
                                                            )
         print(print_info)
         logger.append(print_info)
+
+    sensitivity, specificity = calc_sensitivity_specificity(tot_pred_bin, tot_label_bin)
+    print_info1 = '\nbinary cls accuracy: {0:.4f}\tsensitivity: {1:.4f}\t specificity: {2:.4f}\n'.format(accuracy.avg,
+                                                                                                         sensitivity,
+                                                                                                         specificity)
+    logger.append(print_info1)
+    print(print_info1)
+
+    tot_pred_dr_bin = [0 if x <= 1 else 1 for x in tot_pred_dr]
+    # tot_label_dr_bin = [0 if x <= 1 else 1 for x in tot_label_dr]
+    tot_label_dr_bin = tot_label_bin
+    dr_bin_accuray = np.equal(tot_pred_dr_bin, tot_label_dr_bin).sum() / len(tot_label_dr_bin)
+    dr_s1, dr_s2 = calc_sensitivity_specificity(tot_pred_dr_bin, tot_label_dr_bin)
+
+    log_dr_bin_cls = '\n[DR binary cls]: acc: {acc:.4f}\tsensitivity: {s1:.4f}\tspecificity: {s2:.4f}'.format(
+        acc=dr_bin_accuray,
+        s1=dr_s1,
+        s2=dr_s2
+    )
+
+    print(log_dr_bin_cls)
+
+    logger.append(log_dr_bin_cls)
+
+    tot_pred_dme_bin = [0 if x < 1 else 1 for x in tot_pred_dme]
+    # tot_label_dme_bin = [0 if x < 1 else 1 for x in tot_label_dme]
+    tot_label_dme_bin = tot_label_bin
+    dme_bin_accuray = np.equal(tot_pred_dme_bin, tot_label_dme_bin).sum() / len(tot_label_dme_bin)
+    calc_sensitivity_specificity(tot_pred_dme_bin, tot_label_dme_bin)
+    dme_s1, dme_s2 = calc_sensitivity_specificity(tot_pred_dme_bin, tot_label_dme_bin)
+    log_dme_bin_cls = '\n[DME binary cls]: acc: {acc:.4f}\tsensitivity: {s1:.4f}\tspecificity: {s2:.4f}'.format(
+        acc=dme_bin_accuray,
+        s1=dme_s1,
+        s2=dme_s2
+    )
+    print(log_dme_bin_cls)
+    logger.append(log_dme_bin_cls)
+
+    # tot_pred_mix_bin = [0 if (x < 1 or y <=1) else 1 for x in tot_pred_dme for y in tot_pred_dr]
+    cnt = 0
+    for i in range(len(tot_pred_dr)):
+        numdr = tot_pred_dr[i]
+        numdme = tot_pred_dme[i]
+        if numdr < 2:
+            if numdme > 0:
+                cnt += 1
+
+    print('dr < 2 and dme >0 count is: {}'.format(cnt))
+
+    cnt = 0
+    for i in range(len(tot_pred_dr)):
+        if tot_pred_dme[i] == 0:
+            cnt += 1
+    print('pred dme 0 count is: {}'.format(cnt))
+
+    cnt = 0
+    for i in range(len(tot_pred_dr)):
+        if tot_label_dme[i] == 0:
+            cnt += 1
+    print('label dme 0 count is: {}'.format(cnt))
+
+    tot_pred_mix_bin = [0 if (tot_pred_dme[i] == 0 and tot_pred_dr[i] <= 1) else 1 for i in range(len(tot_pred_dme))]
+    # tot_label_mix_bin = [0 if (x < 1 or y <=1) else 1 for x in tot_label_dme for y in tot_label_dr]
+    # tot_label_mix_bin = [0 if (tot_label_dme[i] < 1 and tot_label_dr[i] <= 1) else 1 for i in range(len(tot_label_dme))]
+    tot_label_mix_bin = tot_label_bin
+    mix_bin_accuray = np.equal(tot_pred_mix_bin, tot_label_mix_bin).sum() / len(tot_label_mix_bin)
+    calc_sensitivity_specificity(tot_pred_mix_bin, tot_label_mix_bin)
+    mix_s1, mix_s2 = calc_sensitivity_specificity(tot_pred_mix_bin, tot_label_mix_bin)
+    log_mix_bin_cls = '\n[MIX binary cls]: acc: {acc:.4f}\tsensitivity: {s1:.4f}\tspecificity: {s2:.4f}'.format(
+        acc=mix_bin_accuray,
+        s1=mix_s1,
+        s2=mix_s2
+    )
+    print(log_mix_bin_cls)
+    logger.append(log_mix_bin_cls)
 
     return logger, dr_kappa, dme_kappa, tot_pred_dr, tot_label_dr, tot_pred_dme, tot_label_dme
 
