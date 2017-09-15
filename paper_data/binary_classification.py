@@ -42,7 +42,7 @@ def parse_args():
     parser.add_argument('--crop', default=448, type=int, help='The crop size of input')
     parser.add_argument('--size', default=512, type=int, choices=[128,256,512,1024], help='The scale size of input')
     parser.add_argument('--weight', default=None, help='The path of pretrained model')
-    parser.add_argument('--lr', default=0.01, type=float)
+    parser.add_argument('--lr', default=0.001, type=float)
     parser.add_argument('--mom', default=0.9, type=float)
     parser.add_argument('--wd', default=1e-4, type=float)
     parser.add_argument('--fix', default=100, type=int)

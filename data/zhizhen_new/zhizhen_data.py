@@ -41,7 +41,7 @@ images_list = []
 dr_list = []
 dme_list = []
 
-with open('/home/weidong/code/dr/DiabeticRetinopathy_solution/data/zhizhen_new/LabelImages/label.txt', 'r') as f:
+with open('/home/weidong/code/github/DiabeticRetinopathy_solution/data/zhizhen_new/LabelImages/label.txt', 'r') as f:
     line = f.readline()
     lines = f.readlines()
     for line in lines:
@@ -100,7 +100,8 @@ print('after: {}'.format(len(images_list)))
 
 bin_list = []
 for i in range(len(dr_list)):
-    if (dr_list[i] > 2) or (dme_list[i] > 0 and dr_list[i] == 2):
+    # if (dr_list[i] > 2) or (dme_list[i] > 0 and dr_list[i] == 2):
+    if (dr_list[i] > 1) or (dme_list[i] > 0):
         bin_list.append(1)
     else:
         bin_list.append(0)
