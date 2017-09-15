@@ -28,8 +28,6 @@ import time
 
 import torch.backends.cudnn as cudnn
 
-from glob import glob
-
 def parse_args():
     parser = argparse.ArgumentParser(description='multi-task classification options')
     parser.add_argument('--root', required=True)
@@ -52,7 +50,7 @@ def parse_args():
         'rsn18', 'rsn34', 'rsn50', 'rsn101', 'rsn150', 'dsn121', 'dsn161', 'dsn169', 'dsn201',
     ])
     parser.add_argument('--seed', default=111, type=int)
-    parser.add_argument('--phase', default='train', choices=['train', 'test', 'infer'])
+    parser.add_argument('--phase', default='train', choices=['train', 'test'])
     parser.add_argument('--display', default=100, type=int)
     parser.add_argument('--workers', default=1, type=int)
     parser.add_argument('--baseline', action='store_true')
@@ -136,57 +134,6 @@ class MultiTaskClsValDataSet(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.images_list)
 
-class MultiTaskClsInferenceDataSet(torch.utils.data.Dataset):
-    def __init__(self, root, crop_size, scale_size):
-        super(MultiTaskClsInferenceDataSet, self).__init__()
-        self.root = root
-        self.images_list = glob(os.path.join(root, '*.jpg'))
-        self.crop_size = crop_size
-        self.scale_size = scale_size
-        with open('info.json', 'r') as fp:
-            info = json.load(fp)
-        mean_values = torch.from_numpy(np.array(info['mean'], dtype=np.float32) / 255)
-        std_values = torch.from_numpy(np.array(info['std'], dtype=np.float32) / 255)
-        self.transform = transforms.Compose([
-            transforms.Scale(self.scale_size),
-            transforms.CenterCrop(self.crop_size),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=mean_values, std=std_values),
-        ])
-
-    def __getitem__(self, item):
-        return self.transform(self._scale_image(self.images_list[item], self.scale_size)), os.path.basename(self.images_list[item])
-
-    def __len__(self):
-        return len(self.images_list)
-
-    def _scale_image(self, imagepath, scale_size):
-        # image = Image.open(os.path.join(root, '{}.jpg'.format(index)))
-        image = Image.open(imagepath)
-        w, h = image.size
-        tw, th = (min(w, h), min(w, h))
-        image = image.crop((w // 2 - tw // 2, h // 2 - th // 2, w // 2 + tw // 2, h // 2 + th // 2))
-        w, h = image.size
-        tw, th = (scale_size, scale_size)
-        ratio = tw / w
-        assert ratio == th / h
-        if ratio < 1:
-            image = image.resize((tw, th), Image.ANTIALIAS)
-        elif ratio > 1:
-            image = image.resize((tw, th), Image.CUBIC)
-        w, h = image.size
-        tw, th = (min(w, h), min(w, h))
-        image = image.crop((w // 2 - tw // 2, h // 2 - th // 2, w // 2 + tw // 2, h // 2 + th // 2))
-        w, h = image.size
-        tw, th = (scale_size, scale_size)
-        ratio = tw / w
-        assert ratio == th / h
-        if ratio < 1:
-            image = image.resize((tw, th), Image.ANTIALIAS)
-        elif ratio > 1:
-            image = image.resize((tw, th), Image.CUBIC)
-        return image
-
 def initialize_cls_weights(cls):
 	for m in cls.modules():
 		if isinstance(m, nn.Conv2d):
@@ -211,7 +158,6 @@ class multi_task_model(nn.Module):
         self.cls0 = None
         self.cls1 = None
         self.cls2 = None
-        self.concatenate = None
         self.featmap = inmap // 32
         self.planes = 2048
         self.outbincls = outbincls
@@ -258,7 +204,6 @@ class multi_task_model(nn.Module):
         # if len(multi_classes) == 3:
         #     self.cls2 = nn.Linear(self.planes, multi_classes[2])
         self.cls2 = nn.Linear(self.planes, 2)
-        self.concatenate = nn.Linear(9, 2)
 
         initialize_cls_weights(self.cls0)
         initialize_cls_weights(self.cls1)
@@ -272,9 +217,7 @@ class multi_task_model(nn.Module):
         out = F.avg_pool2d(out, kernel_size=self.featmap).view(feature.size(0), -1)
         out1 = self.cls0(out)
         out2 = self.cls1(out)
-        # out3 = self.cls2(out)
-        con = torch.cat((out1, out2), dim=1)
-        out3 = self.concatenate(con)
+        out3 = self.cls2(out)
         if self.outbincls:
             return out1, out2, out3
         else:
@@ -567,7 +510,7 @@ def train_dr_and_dme(train_data_loader, model, criterion, optimizer, epoch, disp
 
     return logger
 
-def train_dme(train_data_loader, model, criterion, optimizer, epoch, display):
+def train_dme(train_data_loader, model, criterion, optimizer, epoch, display, dme_weight_aug_ratio=1):
     model.train()
     tot_pred_dr = np.array([], dtype=int)
     tot_label_dr = np.array([], dtype=int)
@@ -589,7 +532,18 @@ def train_dme(train_data_loader, model, criterion, optimizer, epoch, display):
         data_time.update(time.time()-end)
         o_dr, o_dme, o_bin = model(Variable(image.cuda()))
         loss_dr = criterion(o_dr, Variable(label_dr.cuda()))
-        loss_dme = criterion(o_dme, Variable(label_dme.cuda()))
+
+        dme_weight_aug = torch.ones(4)
+
+        dme_weight_aug[0] = 1
+        dme_weight_aug[1] = dme_weight_aug_ratio
+        dme_weight_aug[2] = dme_weight_aug_ratio
+        dme_weight_aug[3] = dme_weight_aug_ratio
+
+        criterion_dme = nn.CrossEntropyLoss(dme_weight_aug.cuda()).cuda()
+
+        loss_dme = criterion_dme(o_dme, Variable(label_dme.cuda()))
+        # loss_dme = criterion(o_dme, Variable(label_dme.cuda()))
         loss_bin = criterion(o_bin, Variable(label_bin.cuda()))
         loss = loss_dme
         optimizer.zero_grad()
@@ -655,7 +609,7 @@ def train_dme(train_data_loader, model, criterion, optimizer, epoch, display):
 
     return logger
 
-def train_bin(train_data_loader, model, criterion, optimizer, epoch, display, dme_weight_aug_ratio=1):
+def train_bin(train_data_loader, model, criterion, optimizer, epoch, display):
     model.train()
     tot_pred_dr = np.array([], dtype=int)
     tot_label_dr = np.array([], dtype=int)
@@ -677,29 +631,16 @@ def train_bin(train_data_loader, model, criterion, optimizer, epoch, display, dm
         data_time.update(time.time()-end)
         o_dr, o_dme, o_bin = model(Variable(image.cuda()))
         loss_dr = criterion(o_dr, Variable(label_dr.cuda()))
-        # loss_dme = criterion(o_dme, Variable(label_dme.cuda()))
-
-        dme_weight_aug = torch.ones(4)
-
-        dme_weight_aug[0] = 1
-        dme_weight_aug[1] = dme_weight_aug_ratio
-        dme_weight_aug[2] = dme_weight_aug_ratio
-        dme_weight_aug[3] = dme_weight_aug_ratio
-
-        criterion_dme = nn.CrossEntropyLoss(dme_weight_aug.cuda()).cuda()
-
-        loss_dme = criterion_dme(o_dme, Variable(label_dme.cuda()))
-
+        loss_dme = criterion(o_dme, Variable(label_dme.cuda()))
         loss_bin = criterion(o_bin, Variable(label_bin.cuda()))
-        loss = loss_bin + loss_dr + loss_dme
+        loss = loss_bin
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         batch_time.update(time.time()-end)
-
-        _, pred_dr = torch.max(o_dr, 1)
-        _, pred_dme = torch.max(o_dme, 1)
-        _, pred_bin = torch.max(o_bin, 1)
+        _,pred_dr = torch.max(o_dr, 1)
+        _,pred_dme = torch.max(o_dme, 1)
+        _,pred_bin = torch.max(o_bin, 1)
         pred_dr = pred_dr.cpu().data.numpy().squeeze()
         label_dr = label_dr.numpy().squeeze()
         pred_dme = pred_dme.cpu().data.numpy().squeeze()
@@ -823,40 +764,6 @@ def eval(eval_data_loader, model, criterion):
 
     return logger, dr_kappa, dme_kappa, tot_pred_dr, tot_label_dr, tot_pred_dme, tot_label_dme
 
-'''
-sensitivity:
-
-tp/(tp+fn)
-
-specificity:
-
-tn/(tn+fp)
-'''
-def calc_sensitivity_specificity(pred, label):
-    assert len(pred) == len(label)
-    tp_cnt = 0
-    tn_cnt = 0
-    fp_cnt = 0
-    fn_cnt = 0
-    # print(pred)
-    # print(label)
-    for i in range(0, len(pred)):
-        if pred[i] == 1:
-            if label[i] == 1:
-                tp_cnt += 1
-            else:
-                fp_cnt += 1
-        else:
-            if label[i] == 1:
-                fn_cnt += 1
-            else:
-                tn_cnt += 1
-
-    sensitivity = tp_cnt/(tp_cnt+fn_cnt) if (tp_cnt+fn_cnt)>0 else 0
-    specificity = tn_cnt/(tn_cnt+fp_cnt) if (tn_cnt+fp_cnt)>0 else 0
-
-    return sensitivity, specificity
-
 def eval_bin(eval_data_loader, model, criterion):
     model.eval()
     tot_pred_dr = np.array([], dtype=int)
@@ -939,127 +846,7 @@ def eval_bin(eval_data_loader, model, criterion):
         print(print_info)
         logger.append(print_info)
 
-    sensitivity, specificity = calc_sensitivity_specificity(tot_pred_bin, tot_label_bin)
-    print_info1 = '\nbinary cls accuracy: {0:.4f}\tsensitivity: {1:.4f}\t specificity: {2:.4f}\n'.format(accuracy.avg, sensitivity, specificity)
-    logger.append(print_info1)
-    print(print_info1)
-
-    tot_pred_dr_bin = [0 if x <=1 else 1 for x in tot_pred_dr]
-    # tot_label_dr_bin = [0 if x <= 1 else 1 for x in tot_label_dr]
-    tot_label_dr_bin = tot_label_bin
-    dr_bin_accuray = np.equal(tot_pred_dr_bin, tot_label_dr_bin).sum() / len(tot_label_dr_bin)
-    dr_s1, dr_s2 = calc_sensitivity_specificity(tot_pred_dr_bin, tot_label_dr_bin)
-
-    log_dr_bin_cls = '\n[DR binary cls]: acc: {acc:.4f}\tsensitivity: {s1:.4f}\tspecificity: {s2:.4f}'.format(
-        acc = dr_bin_accuray,
-        s1 = dr_s1,
-        s2 = dr_s2
-    )
-
-    print(log_dr_bin_cls)
-
-    logger.append(log_dr_bin_cls)
-
-
-    tot_pred_dme_bin = [0 if x < 1 else 1 for x in tot_pred_dme]
-    # tot_label_dme_bin = [0 if x < 1 else 1 for x in tot_label_dme]
-    tot_label_dme_bin = tot_label_bin
-    dme_bin_accuray = np.equal(tot_pred_dme_bin, tot_label_dme_bin).sum() / len(tot_label_dme_bin)
-    calc_sensitivity_specificity(tot_pred_dme_bin, tot_label_dme_bin)
-    dme_s1, dme_s2 = calc_sensitivity_specificity(tot_pred_dme_bin, tot_label_dme_bin)
-    log_dme_bin_cls = '\n[DME binary cls]: acc: {acc:.4f}\tsensitivity: {s1:.4f}\tspecificity: {s2:.4f}'.format(
-        acc=dme_bin_accuray,
-        s1=dme_s1,
-        s2=dme_s2
-    )
-    print(log_dme_bin_cls)
-    logger.append(log_dme_bin_cls)
-
-    # tot_pred_mix_bin = [0 if (x < 1 or y <=1) else 1 for x in tot_pred_dme for y in tot_pred_dr]
-    cnt = 0
-    for i in range(len(tot_pred_dr)):
-        numdr = tot_pred_dr[i]
-        numdme = tot_pred_dme[i]
-        if numdr < 2:
-            if numdme > 0:
-                cnt += 1
-
-    print('dr < 2 and dme >0 count is: {}'.format(cnt))
-
-    cnt = 0
-    for i in range(len(tot_pred_dr)):
-        if tot_pred_dme[i] == 0:
-            cnt += 1
-    print('pred dme 0 count is: {}'.format(cnt))
-
-    cnt = 0
-    for i in range(len(tot_pred_dr)):
-        if tot_label_dme[i] == 0:
-            cnt += 1
-    print('label dme 0 count is: {}'.format(cnt))
-
-    tot_pred_mix_bin = [0 if (tot_pred_dme[i] == 0 and tot_pred_dr[i] <= 1) else 1 for i in range(len(tot_pred_dme))]
-    # tot_label_mix_bin = [0 if (x < 1 or y <=1) else 1 for x in tot_label_dme for y in tot_label_dr]
-    # tot_label_mix_bin = [0 if (tot_label_dme[i] < 1 and tot_label_dr[i] <= 1) else 1 for i in range(len(tot_label_dme))]
-    tot_label_mix_bin = tot_label_bin
-    mix_bin_accuray = np.equal(tot_pred_mix_bin, tot_label_mix_bin).sum() / len(tot_label_mix_bin)
-    calc_sensitivity_specificity(tot_pred_mix_bin, tot_label_mix_bin)
-    mix_s1, mix_s2 = calc_sensitivity_specificity(tot_pred_mix_bin, tot_label_mix_bin)
-    log_mix_bin_cls = '\n[MIX binary cls]: acc: {acc:.4f}\tsensitivity: {s1:.4f}\tspecificity: {s2:.4f}'.format(
-        acc=mix_bin_accuray,
-        s1=mix_s1,
-        s2=mix_s2
-    )
-    print(log_mix_bin_cls)
-    logger.append(log_mix_bin_cls)
-
-    return logger, dr_kappa, dme_kappa, tot_pred_dr, tot_label_dr, tot_pred_dme, tot_label_dme, accuracy.avg
-
-def infer_bin(eval_data_loader, model, refer_root):
-    model.eval()
-    tot_pred_dr = np.array([], dtype=int)
-    tot_label_dr = np.array([], dtype=int)
-    tot_pred_dme = np.array([], dtype=int)
-    tot_label_dme = np.array([], dtype=int)
-    tot_pred_bin = np.array([], dtype=int)
-    tot_label_bin = np.array([], dtype=int)
-    batch_time = AverageMeter()
-    data_time = AverageMeter()
-    end = time.time()
-    logger = []
-    imagenames = []
-    for index, (image, imagename) in enumerate(eval_data_loader):
-        for name in imagename:
-            imagenames.append(name)
-        data_time.update(time.time()-end)
-        o_dr, o_dme, o_bin = model(Variable(image.cuda()))
-        batch_time.update(time.time()-end)
-        _,pred_dr = torch.max(o_dr, 1)
-        _,pred_dme = torch.max(o_dme, 1)
-        _, pred_bin = torch.max(o_bin, 1)
-        pred_dr = pred_dr.cpu().data.numpy().squeeze()
-        pred_dme = pred_dme.cpu().data.numpy().squeeze()
-        pred_bin = pred_bin.cpu().data.numpy().squeeze()
-
-        tot_pred_dr = np.append(tot_pred_dr, pred_dr)
-        tot_pred_dme = np.append(tot_pred_dme, pred_dme)
-        tot_pred_bin = np.append(tot_pred_bin, pred_bin)
-
-        data = np.column_stack((imagenames, tot_pred_dr, tot_pred_dme, tot_pred_bin))
-        data_df = pd.DataFrame(data, columns=['image', 'dr_level', 'dme_level', 'referable'])
-
-        data_csv = os.path.join(refer_root, 'result.csv')
-
-        data_df.to_csv(data_csv)
-
-        print_info = 'Eval: [{iter}/{tot}]\t'.format(iter=index, tot=len(eval_data_loader))
-        print(print_info)
-
-    print('====>reference end!')
-
-    return logger
-
-
+    return logger, dr_kappa, dme_kappa, tot_pred_dr, tot_label_dr, tot_pred_dme, tot_label_dme
 
 def train_test():
     print('welcome to train test!')
@@ -1106,7 +893,6 @@ def main():
                                   shuffle=False, num_workers=opt.workers, pin_memory=False)
         kp_dr_best = 0
         kp_dme_best = 0
-        bin_acc_best = 0
         for epoch in range(opt.epoch):
             if epoch < opt.fix:
                 lr = opt.lr
@@ -1144,11 +930,6 @@ def main():
             optimizer_bin_ft = optim.SGD([{'params': model.cls2.parameters()}], lr=opt.lr, momentum=opt.mom,
                                          weight_decay=opt.wd,
                                          nesterov=True)
-            optimizer_bin_con = optim.SGD([{'params': model.base.parameters()},
-                                   {'params': model.cls0.parameters()},
-                                   {'params': model.cls1.parameters()}, {'params': model.concatenate.parameters()},], lr=opt.lr, momentum=opt.mom,
-                                  weight_decay=opt.wd,
-                                  nesterov=True)
             # logger = train(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer, epoch, opt.display)
 
             # if epoch % 500 < 200:
@@ -1160,14 +941,11 @@ def main():
             #     logger_dr = train_dr(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer_dr_only, epoch, opt.display)
             #     logger = logger_dr
 
-            # logger = train_dr_and_dme(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer, epoch,
-            #                           opt.display)
-
-            logger = train_bin(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer_bin_con, epoch,
+            logger = train_dme(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer, epoch,
                                       opt.display, opt.dme_weight_aug)
 
             # logger_val, kp_dr, kp_dme, _,_,_,_ = eval(dataset_val, nn.DataParallel(model).cuda(), criterion)
-            logger_val, kp_dr, kp_dme, _, _, _, _, acc = eval_bin(dataset_val, nn.DataParallel(model).cuda(), criterion)
+            logger_val, kp_dr, kp_dme, _, _, _, _ = eval_bin(dataset_val, nn.DataParallel(model).cuda(), criterion)
 
             if kp_dr > kp_dr_best:
                 print('\ncurrent best dr kappa is: {}\n'.format(kp_dr))
@@ -1185,15 +963,6 @@ def main():
                 print('====> Save model: {}'.format(
                     os.path.join(output_dir, opt.dataset + '_multi_task_cls_dme_' + opt.model + '_%03d' % epoch + '_best.pth')))
 
-            if acc > bin_acc_best:
-                print('\ncurrent best concatenation binary cls accuracy is: {}\n'.format(acc))
-                bin_acc_best = acc
-                torch.save(model.cpu().state_dict(), os.path.join(output_dir,
-                                                                  opt.dataset + '_multi_task_cls_concatenation_binary_' + opt.model + '_%03d' % epoch + '_best.pth'))
-                print('====> Save model: {}'.format(
-                    os.path.join(output_dir,
-                                 opt.dataset + '_multi_task_cls_concatenation_binary_' + opt.model + '_%03d' % epoch + '_best.pth')))
-
             if not os.path.isfile(os.path.join(output_dir, 'train.log')):
                 with open(os.path.join(output_dir, 'train.log'), 'w') as fp:
                     fp.write(str(opt)+'\n\n')
@@ -1206,7 +975,7 @@ def main():
             dataset_test = DataLoader(MultiTaskClsValDataSet(opt.root, opt.testcsv, opt.crop, opt.size),
                                   batch_size=opt.batch,
                                   shuffle=False, num_workers=opt.workers, pin_memory=False)
-            logger_val, kp_dr, kp_dme, pred_dr, label_dr, pred_dme, label_dme, _ = eval_bin(dataset_test, nn.DataParallel(model).cuda(), criterion)
+            logger_val, kp_dr, kp_dme, pred_dr, label_dr, pred_dme, label_dme = eval_bin(dataset_test, nn.DataParallel(model).cuda(), criterion)
             print('===> DR Kappa: %.4f' % kp_dr)
             print('===> Confusion Matrix:')
             dr_confusion_matrix = str(confusion_matrix(label_dr, pred_dr))
@@ -1220,7 +989,6 @@ def main():
 
             with open(os.path.join(output_dir, 'test.log'), 'w') as fp:
                 fp.write(str(opt) + '\n')
-                fp.write('\n' + '\n'.join(logger_val))
                 fp.write('\n====> DR Kappa: %.4f' % kp_dr)
                 fp.write('\n')
                 fp.write(dr_confusion_matrix)
@@ -1230,15 +998,6 @@ def main():
                 fp.write(dme_confusion_matrix)
             np.save(os.path.join(output_dir, 'results_dr.npy'), pred_dr, label_dr, confusion_matrix(label_dr, pred_dr))
             np.save(os.path.join(output_dir, 'results_dme.npy'), pred_dme, label_dme, confusion_matrix(label_dme, pred_dme))
-        else:
-            raise Exception('No weights found!')
-    elif opt.phase == 'infer':
-        if opt.weight:
-            print('====> Evaluating model')
-            dataset_refer = DataLoader(MultiTaskClsInferenceDataSet(opt.infer_root, opt.crop, opt.size),
-                                  batch_size=opt.batch,
-                                  shuffle=False, num_workers=opt.workers, pin_memory=False)
-            logger_val = infer_bin(dataset_refer, nn.DataParallel(model).cuda(), opt.infer_root)
         else:
             raise Exception('No weights found!')
     else:
