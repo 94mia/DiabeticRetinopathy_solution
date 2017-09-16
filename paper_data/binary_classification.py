@@ -334,6 +334,9 @@ tp/(tp+fn)
 specificity:
 
 tn/(tn+fp)
+
+f1 score:
+2tp/(2tp+fp+fn)
 '''
 def calc_sensitivity_specificity(pred, label):
     assert len(pred) == len(label)
@@ -357,8 +360,9 @@ def calc_sensitivity_specificity(pred, label):
 
     sensitivity = tp_cnt/(tp_cnt+fn_cnt) if (tp_cnt+fn_cnt)>0 else 0
     specificity = tn_cnt/(tn_cnt+fp_cnt) if (tn_cnt+fp_cnt)>0 else 0
+    f1 = 2*tp_cnt/(2*tp_cnt+fp_cnt+fn_cnt) if (2*tp_cnt+fp_cnt+fn_cnt) > 0 else 0
 
-    return sensitivity, specificity
+    return sensitivity, specificity, f1
 
 
 def cls_eval(eval_data_loader, model, criterion, display):
@@ -394,8 +398,8 @@ def cls_eval(eval_data_loader, model, criterion, display):
         logger.append(print_info)
         print(print_info)
 
-    sensitivity, specificity = calc_sensitivity_specificity(tot_pred, tot_label)
-    print_info1 = '\nsensitivity: {0:.4f}\t specificity: {1:.4f}\n'.format(sensitivity, specificity)
+    sensitivity, specificity, f1 = calc_sensitivity_specificity(tot_pred, tot_label)
+    print_info1 = '\naccuracy:{0:.4f}\tsensitivity: {1:.4f}\t specificity: {2:.4f}\tf1 score: {3:.4f}\n'.format(accuracy.avg, sensitivity, specificity, f1)
     logger.append(print_info1)
     print(print_info1)
 
