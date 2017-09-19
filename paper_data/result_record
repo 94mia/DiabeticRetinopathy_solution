@@ -1,38 +1,47 @@
-dense net 121:
+# first paper result
 
-crop size:448
 
-===> DR Kappa: 0.9143
+
+## multi-task result
+
+binary cls accuracy: 0.9509     sensitivity: 0.9412      specificity: 0.9570    f1 score: 0.9370
+
+[DR binary cls]: acc: 0.9511    sensitivity: 0.9451     specificity: 0.9549     f1 score: 0.9375
+
+[DME binary cls]: acc: 0.7921   sensitivity: 0.4734     specificity: 0.9941     f1 score: 0.6385
+dr < 2 and dme >0 count is: 0
+pred dme 0 count is: 16006
+label dme 0 count is: 15645
+
+[MIX binary cls]: acc: 0.9511   sensitivity: 0.9451     specificity: 0.9549     f1 score: 0.9375
+===> DR Kappa: 0.9139
 ===> Confusion Matrix:
-[[11442    14   224     9     9]
- [   62    32   189     2     0]
- [  519    58  4145   399    51]
- [    9     1   301  1099   107]
- [    5     1   118   266   643]]
-
-
-crop size:512
+[[11444     3   329     2     6]
+ [   60     4   206     1     0]
+ [  398     8  4415   170    56]
+ [   12     0   567   886   116]
+ [    1     0   161   205   642]]
 
 
 
-multi-task rsn34
-
-===> DR Kappa: 0.9078
+===> DME Kappa: 0.7490
 ===> Confusion Matrix:
-[[11376     7   303     3     9]
- [   54    11   219     0     1]
- [  510    16  4349   237    60]
- [   14     0   403   949   151]
- [   10     0   150   188   685]]
+[[14858   635    98    54]
+ [  851   970   323    38]
+ [  201   280   550   132]
+ [   96    38   203   365]]
 
 
 
-===> DME Kappa: 0.7344
-===> Confusion Matrix:
-[[15044   359   115   107]
- [ 1126   691   336    56]
- [  217   267   536   192]
- [   84    23   141   411]]
+
+## binary classification goolenet result
+
+accuracy:0.9459 sensitivity: 0.9179      specificity: 0.9636    f1 score: 0.9293
 
 
+
+
+## binary classification rsn34 result
+
+accuracy:0.9497 sensitivity: 0.9451      specificity: 0.9526    f1 score: 0.9358
 

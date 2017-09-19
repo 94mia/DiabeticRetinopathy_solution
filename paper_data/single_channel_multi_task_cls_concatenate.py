@@ -854,8 +854,10 @@ def calc_sensitivity_specificity(pred, label):
 
     sensitivity = tp_cnt/(tp_cnt+fn_cnt) if (tp_cnt+fn_cnt)>0 else 0
     specificity = tn_cnt/(tn_cnt+fp_cnt) if (tn_cnt+fp_cnt)>0 else 0
+    f1 = 2 * tp_cnt / (2 * tp_cnt + fp_cnt + fn_cnt) if (2 * tp_cnt + fp_cnt + fn_cnt) > 0 else 0
 
-    return sensitivity, specificity
+
+    return sensitivity, specificity, f1
 
 def eval_bin(eval_data_loader, model, criterion):
     model.eval()
@@ -939,8 +941,8 @@ def eval_bin(eval_data_loader, model, criterion):
         print(print_info)
         logger.append(print_info)
 
-    sensitivity, specificity = calc_sensitivity_specificity(tot_pred_bin, tot_label_bin)
-    print_info1 = '\nbinary cls accuracy: {0:.4f}\tsensitivity: {1:.4f}\t specificity: {2:.4f}\n'.format(accuracy.avg, sensitivity, specificity)
+    sensitivity, specificity, f1 = calc_sensitivity_specificity(tot_pred_bin, tot_label_bin)
+    print_info1 = '\nbinary cls accuracy: {0:.4f}\tsensitivity: {1:.4f}\t specificity: {2:.4f}\tf1 score: {3:.4f}'.format(accuracy.avg, sensitivity, specificity, f1)
     logger.append(print_info1)
     print(print_info1)
 
@@ -948,12 +950,12 @@ def eval_bin(eval_data_loader, model, criterion):
     # tot_label_dr_bin = [0 if x <= 1 else 1 for x in tot_label_dr]
     tot_label_dr_bin = tot_label_bin
     dr_bin_accuray = np.equal(tot_pred_dr_bin, tot_label_dr_bin).sum() / len(tot_label_dr_bin)
-    dr_s1, dr_s2 = calc_sensitivity_specificity(tot_pred_dr_bin, tot_label_dr_bin)
+    dr_s1, dr_s2, dr_f1 = calc_sensitivity_specificity(tot_pred_dr_bin, tot_label_dr_bin)
 
-    log_dr_bin_cls = '\n[DR binary cls]: acc: {acc:.4f}\tsensitivity: {s1:.4f}\tspecificity: {s2:.4f}'.format(
+    log_dr_bin_cls = '\n[DR binary cls]: acc: {acc:.4f}\tsensitivity: {s1:.4f}\tspecificity: {s2:.4f}\tf1 score: {f1:.4f}'.format(
         acc = dr_bin_accuray,
         s1 = dr_s1,
-        s2 = dr_s2
+        s2 = dr_s2, f1 = dr_f1
     )
 
     print(log_dr_bin_cls)
@@ -966,11 +968,11 @@ def eval_bin(eval_data_loader, model, criterion):
     tot_label_dme_bin = tot_label_bin
     dme_bin_accuray = np.equal(tot_pred_dme_bin, tot_label_dme_bin).sum() / len(tot_label_dme_bin)
     calc_sensitivity_specificity(tot_pred_dme_bin, tot_label_dme_bin)
-    dme_s1, dme_s2 = calc_sensitivity_specificity(tot_pred_dme_bin, tot_label_dme_bin)
-    log_dme_bin_cls = '\n[DME binary cls]: acc: {acc:.4f}\tsensitivity: {s1:.4f}\tspecificity: {s2:.4f}'.format(
+    dme_s1, dme_s2, dme_f1 = calc_sensitivity_specificity(tot_pred_dme_bin, tot_label_dme_bin)
+    log_dme_bin_cls = '\n[DME binary cls]: acc: {acc:.4f}\tsensitivity: {s1:.4f}\tspecificity: {s2:.4f}\tf1 score: {f1:.4f}'.format(
         acc=dme_bin_accuray,
         s1=dme_s1,
-        s2=dme_s2
+        s2=dme_s2, f1 = dme_f1
     )
     print(log_dme_bin_cls)
     logger.append(log_dme_bin_cls)
@@ -1004,11 +1006,11 @@ def eval_bin(eval_data_loader, model, criterion):
     tot_label_mix_bin = tot_label_bin
     mix_bin_accuray = np.equal(tot_pred_mix_bin, tot_label_mix_bin).sum() / len(tot_label_mix_bin)
     calc_sensitivity_specificity(tot_pred_mix_bin, tot_label_mix_bin)
-    mix_s1, mix_s2 = calc_sensitivity_specificity(tot_pred_mix_bin, tot_label_mix_bin)
-    log_mix_bin_cls = '\n[MIX binary cls]: acc: {acc:.4f}\tsensitivity: {s1:.4f}\tspecificity: {s2:.4f}'.format(
+    mix_s1, mix_s2, mix_f1 = calc_sensitivity_specificity(tot_pred_mix_bin, tot_label_mix_bin)
+    log_mix_bin_cls = '\n[MIX binary cls]: acc: {acc:.4f}\tsensitivity: {s1:.4f}\tspecificity: {s2:.4f}\tf1 score: {f1:.4f}'.format(
         acc=mix_bin_accuray,
         s1=mix_s1,
-        s2=mix_s2
+        s2=mix_s2, f1 = mix_f1
     )
     print(log_mix_bin_cls)
     logger.append(log_mix_bin_cls)

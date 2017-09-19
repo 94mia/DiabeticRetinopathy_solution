@@ -58,5 +58,18 @@
 
 
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_multi.csv --workers 8 --batch 128 --epoch 50 --model rsn34
-CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_multi.csv --workers 8 --batch 128 --epoch 50
+#CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_multi.csv --workers 8 --batch 128 --epoch 50 --model rsn34
+#CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_multi.csv --workers 8 --batch 128 --epoch 50
+
+
+### test
+
+#CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_multi.csv --workers 8 --batch 64 --epoch 50 --weight ./model/bin/kaggle_binarycls_googlenet_020_best.pth --phase test
+#CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_multi.csv --workers 8 --batch 32 --epoch 50 --model rsn34 --weight ./model/bin/kaggle_binarycls_rsn34_030_best.pth --phase test
+
+
+#CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification_highsensitivity.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_multi.csv --workers 8 --batch 64 --epoch 50 --display 100
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification_highsensitivity.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_multi.csv --workers 8 --batch 64 --epoch 50 --display 100 --weight /home/weidong/code/github/DiabeticRetinopathy_solution/paper_data/output/kaggle_binary_cls_train_20170918125855_googlenet_binary_cls/kaggle_binarycls_googlenet_000_best.pth --phase test
+#CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification_highsensitivity.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_multi.csv --workers 8 --batch 64 --epoch 50 --display 100 --weight /home/weidong/code/github/DiabeticRetinopathy_solution/paper_data/output/kaggle_binary_cls_train_20170918125855_googlenet_binary_cls/kaggle_binarycls_googlenet_003_best.pth --phase test
+#CUDA_VISIBLE_DEVICES=0,1,2,3 python binary_classification_highsensitivity.py --root ../data/zhizhen_new/LabelImages/512 --traincsv ../data/zhizhen_new/LabelImages/train_multi.csv --valcsv ../data/zhizhen_new/LabelImages/val_multi.csv --testcsv ../data/zhizhen_new/LabelImages/test_multi.csv --workers 8 --batch 64 --epoch 50 --display 100 --weight /home/weidong/code/github/DiabeticRetinopathy_solution/paper_data/output/kaggle_binary_cls_train_20170918125855_googlenet_binary_cls/kaggle_binarycls_googlenet_004_best.pth --phase test
