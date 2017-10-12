@@ -68,7 +68,7 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
             elif 'store_kaggle_annotation_result' in cmd:
                 self._store_kaggle_annotation_result();
             elif 'save_label_info' in cmd:
-                self._save_label_info(cmd.split(' ')[1:])
+                self._save_label_info(cmd)
             else:
                 self._doctor_confirm();
 
@@ -84,7 +84,7 @@ class ImageHTTPRequestHandler(BaseHTTPRequestHandler):
             elif 'store_kaggle_annotation_result' in cmd:
                 self._store_kaggle_annotation_result();
             elif 'save_label_info' in cmd:
-                self._save_label_info(cmd.split(' ')[1:])
+                self._save_label_info(cmd)
             else:
                 self._doctor_confirm();
 
