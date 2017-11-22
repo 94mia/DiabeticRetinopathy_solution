@@ -8,21 +8,24 @@ def scale_image(root, imglist, threadid):
     print('===>begin: ', str(threadid))
     print(imglist)
     for index in imglist:
-        image = Image.open(os.path.join(root, '{}.jpg'.format(index)))
-        w, h = image.size
-        tw, th = (min(w, h), min(w, h))
-        image = image.crop((w // 2 - tw // 2, h // 2 - th // 2, w // 2 + tw // 2, h // 2 + th // 2))
-        w, h = image.size
-        for scale_size in scale_sizes:
-            tw, th = (scale_size, scale_size)
-            ratio = tw / w
-            assert ratio == th / h
-            if ratio < 1:
-                image = image.resize((tw, th), Image.ANTIALIAS)
-            elif ratio > 1:
-                image = image.resize((tw, th), Image.CUBIC)
-            image.save(os.path.join(root, '{0}/{1}_{2}.png'.format(scale_size, index, scale_size)))
-            print('save: ', os.path.join(root, '{0}/{1}_{2}.png'.format(scale_size, index, scale_size)))
+        try:
+            image = Image.open(os.path.join(root, '{}.jpg'.format(index)))
+            w, h = image.size
+            tw, th = (min(w, h), min(w, h))
+            image = image.crop((w // 2 - tw // 2, h // 2 - th // 2, w // 2 + tw // 2, h // 2 + th // 2))
+            w, h = image.size
+            for scale_size in scale_sizes:
+                tw, th = (scale_size, scale_size)
+                ratio = tw / w
+                assert ratio == th / h
+                if ratio < 1:
+                    image = image.resize((tw, th), Image.ANTIALIAS)
+                elif ratio > 1:
+                    image = image.resize((tw, th), Image.CUBIC)
+                image.save(os.path.join(root, '{0}/{1}_{2}.png'.format(scale_size, index, scale_size)))
+                print('save: ', os.path.join(root, '{0}/{1}_{2}.png'.format(scale_size, index, scale_size)))
+        except:
+            print('error: {}'.format(index))
     print('===>end: ', str(threadid))
 
 

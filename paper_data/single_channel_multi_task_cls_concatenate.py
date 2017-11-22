@@ -100,7 +100,7 @@ class MultiTaskClsDataSet(torch.utils.data.Dataset):
 
     def __getitem__(self, item):
         return self.transform(
-            Image.open(os.path.join(self.root, self.images_list[item][0] + '_' + str(self.scale_size) + '.png'))), \
+            Image.open(os.path.join(self.root, str(self.images_list[item][0]) + '_' + str(self.scale_size) + '.png'))), \
                self.images_list[item][1], self.images_list[item][2], self.images_list[item][3]
 
     def __len__(self):
@@ -131,7 +131,7 @@ class MultiTaskClsValDataSet(torch.utils.data.Dataset):
         ])
 
     def __getitem__(self, item):
-        return self.transform(Image.open(os.path.join(self.root, self.images_list[item][0]+'_'+str(self.scale_size)+'.png'))), self.images_list[item][1], self.images_list[item][2], self.images_list[item][3]
+        return self.transform(Image.open(os.path.join(self.root, str(self.images_list[item][0])+'_'+str(self.scale_size)+'.png'))), self.images_list[item][1], self.images_list[item][2], self.images_list[item][3]
 
     def __len__(self):
         return len(self.images_list)

@@ -18,6 +18,9 @@ data/dme/dme.zip
 *.jpeg
 *.csv
 *.pth
+*.rar
+
+data/image_x
 
 data/kaggle_512
 data/zhizhen_new
