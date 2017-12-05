@@ -268,7 +268,7 @@ class DrImageClassifier_ZZ(object):
         ])
 
     def load_model(self, arch, weights, devs=[0]):
-        model = cls_model(arch, self.crop_size, multi_classes=[5, 4], weights=weights)
+        model = multi_task_model(arch, self.crop_size, multi_classes=[5, 4], weights=weights)
         print('device id is: '.format(devs))
         return torch.nn.DataParallel(model, devs).cuda()
 
