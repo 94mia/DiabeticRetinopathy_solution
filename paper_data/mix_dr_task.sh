@@ -1,1 +1,2 @@
+#!/usr/bin/env bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 python single_channel_multi_task_cls_concatenate.py --root /home/weidong/data/LabelImages/512 --traincsv /home/weidong/data/LabelImages/train_multi.csv --valcsv /home/weidong/data/LabelImages/val_multi.csv --testcsv /home/weidong/data/LabelImages/test_multi.csv --model rsn34 --batch 32 --workers 4 --epoch 80 --display 50 --crop 448 --size 512 --exp mix_dr_model

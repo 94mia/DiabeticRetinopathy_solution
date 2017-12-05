@@ -45,7 +45,7 @@ bingli_list = []
 for index, row in df.iterrows():
     bingli_list.append(row[9])
 
-ill_case = '老年性'
+ill_case = 'DR'
 
 bingli_list = bingli_list[2:]
 
@@ -69,7 +69,7 @@ for index in bingli_list:
 
 
 dict_cut = {}
-dict = {key:value for key,value in dict.items() if value > 50}
+dict = {key:value for key,value in dict.items() if value > 100}
 
 print(dict)
 print(list_age)
