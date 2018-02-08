@@ -3,22 +3,25 @@ import http.client
 
 # conn = http.client.HTTPConnection('yq01-idl-gpu-offline80.yq01.baidu.com', port=8002)
 
-conn = http.client.HTTPConnection("face.baidu.com")
+conn = http.client.HTTPConnection('yq01-idl-gpu-online9.yq01.baidu.com', port=8003)
 
-data = open('/home/weidong/code/dr/DiabeticRetinopathy_solution/web_service/22279_left.jpeg', 'rb').read()
+# conn = http.client.HTTPConnection("face.baidu.com")
+
+data = open('/home/weidong/data/3/71541.jpg', 'rb').read()
 
 headers = {"Content-type": "image/jpeg", "Accept": "q=0.6, image/jpeg", "Content-Length": str(len(data)), "algo":"zz"}
 # headers = {"Content-type": "image/jpeg", "Accept": "q=0.6, image/jpeg", "Content-Length": str(len(data))}
 
-conn.request('POST', "/test/for/medical", data, headers)
+# conn.request('POST', "/test/for/medical", data, headers)
 # conn.request('GET', "/test/for/medical", data, headers)
-# conn.request('POST', "", data, headers)
+conn.request('POST', "", data, headers)
 # conn.request('POST', "", data, headers)
 
 r = conn.getresponse()
 
-print('The image dr level is: {}'.format(r.headers['idx']))
-print('The image dr level propobility is: {}'.format(r.headers['prop']))
+print('The image dr level is: {}'.format(r.headers['pragma']))
+print('The image dr level is: {}'.format(r.headers['pragma']))
+print('The image dr level propobility is: {}'.format(r.headers['pragma']))
 
 image_uid = r.headers['image_uid']
 

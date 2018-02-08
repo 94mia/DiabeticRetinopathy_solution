@@ -59,7 +59,6 @@ def parse_args():
     parser.add_argument('--output', default='output', help='The output dir')
 
     parser.add_argument('--infer_root', default=None)
-    parser.add_argument('--infer_result_file', default='result')
     parser.add_argument('--dme_weight_aug', default=1.0, type=float)
 
     return parser.parse_args()
@@ -692,7 +691,8 @@ def train_bin(train_data_loader, model, criterion, optimizer, epoch, display, dm
         loss_dme = criterion_dme(o_dme, Variable(label_dme.cuda()))
 
         loss_bin = criterion(o_bin, Variable(label_bin.cuda()))
-        loss = loss_bin + loss_dr + loss_dme
+        # loss = loss_bin + loss_dr + loss_dme
+        loss = loss_bin
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -1018,7 +1018,7 @@ def eval_bin(eval_data_loader, model, criterion):
 
     return logger, dr_kappa, dme_kappa, tot_pred_dr, tot_label_dr, tot_pred_dme, tot_label_dme, accuracy.avg
 
-def infer_bin(eval_data_loader, model, refer_root, infer_result_file):
+def infer_bin(eval_data_loader, model, refer_root):
     model.eval()
     tot_pred_dr = np.array([], dtype=int)
     tot_label_dr = np.array([], dtype=int)
@@ -1051,7 +1051,7 @@ def infer_bin(eval_data_loader, model, refer_root, infer_result_file):
         data = np.column_stack((imagenames, tot_pred_dr, tot_pred_dme, tot_pred_bin))
         data_df = pd.DataFrame(data, columns=['image', 'dr_level', 'dme_level', 'referable'])
 
-        data_csv = os.path.join(refer_root, '{}.csv'.format(infer_result_file))
+        data_csv = os.path.join(refer_root, 'result.csv')
 
         data_df.to_csv(data_csv)
 
@@ -1148,8 +1148,7 @@ def main():
                                          weight_decay=opt.wd,
                                          nesterov=True)
             optimizer_bin_con = optim.SGD([{'params': model.base.parameters()},
-                                   {'params': model.cls0.parameters()},
-                                   {'params': model.cls1.parameters()}, {'params': model.concatenate.parameters()},], lr=opt.lr, momentum=opt.mom,
+                                   {'params': model.concatenate.parameters()},], lr=opt.lr, momentum=opt.mom,
                                   weight_decay=opt.wd,
                                   nesterov=True)
             # logger = train(dataset_train, nn.DataParallel(model).cuda(), criterion, optimizer, epoch, opt.display)
@@ -1172,21 +1171,21 @@ def main():
             # logger_val, kp_dr, kp_dme, _,_,_,_ = eval(dataset_val, nn.DataParallel(model).cuda(), criterion)
             logger_val, kp_dr, kp_dme, _, _, _, _, acc = eval_bin(dataset_val, nn.DataParallel(model).cuda(), criterion)
 
-            if kp_dr > kp_dr_best:
-                print('\ncurrent best dr kappa is: {}\n'.format(kp_dr))
-                kp_dr_best = kp_dr
-                torch.save(model.cpu().state_dict(), os.path.join(output_dir,
-                                                                  opt.dataset + '_multi_task_cls_dr_' + opt.model + '_%03d' % epoch + '_best.pth'))
-                print('====> Save model: {}'.format(
-                    os.path.join(output_dir, opt.dataset + '_multi_task_cls_dr_' + opt.model + '_%03d' % epoch + '_best.pth')))
-
-            if kp_dme > kp_dme_best:
-                print('\ncurrent best dme kappa is: {}\n'.format(kp_dme))
-                kp_dme_best = kp_dme
-                torch.save(model.cpu().state_dict(), os.path.join(output_dir,
-                                                                  opt.dataset + '_multi_task_cls_dme_' + opt.model + '_%03d' % epoch + '_best.pth'))
-                print('====> Save model: {}'.format(
-                    os.path.join(output_dir, opt.dataset + '_multi_task_cls_dme_' + opt.model + '_%03d' % epoch + '_best.pth')))
+            # if kp_dr > kp_dr_best:
+            #     print('\ncurrent best dr kappa is: {}\n'.format(kp_dr))
+            #     kp_dr_best = kp_dr
+            #     torch.save(model.cpu().state_dict(), os.path.join(output_dir,
+            #                                                       opt.dataset + '_multi_task_cls_dr_' + opt.model + '_%03d' % epoch + '_best.pth'))
+            #     print('====> Save model: {}'.format(
+            #         os.path.join(output_dir, opt.dataset + '_multi_task_cls_dr_' + opt.model + '_%03d' % epoch + '_best.pth')))
+            #
+            # if kp_dme > kp_dme_best:
+            #     print('\ncurrent best dme kappa is: {}\n'.format(kp_dme))
+            #     kp_dme_best = kp_dme
+            #     torch.save(model.cpu().state_dict(), os.path.join(output_dir,
+            #                                                       opt.dataset + '_multi_task_cls_dme_' + opt.model + '_%03d' % epoch + '_best.pth'))
+            #     print('====> Save model: {}'.format(
+            #         os.path.join(output_dir, opt.dataset + '_multi_task_cls_dme_' + opt.model + '_%03d' % epoch + '_best.pth')))
 
             if acc > bin_acc_best:
                 print('\ncurrent best concatenation binary cls accuracy is: {}\n'.format(acc))
@@ -1241,7 +1240,7 @@ def main():
             dataset_refer = DataLoader(MultiTaskClsInferenceDataSet(opt.infer_root, opt.crop, opt.size),
                                   batch_size=opt.batch,
                                   shuffle=False, num_workers=opt.workers, pin_memory=False)
-            logger_val = infer_bin(dataset_refer, nn.DataParallel(model).cuda(), opt.infer_root, opt.infer_result_file)
+            logger_val = infer_bin(dataset_refer, nn.DataParallel(model).cuda(), opt.infer_root)
         else:
             raise Exception('No weights found!')
     else:
